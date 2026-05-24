@@ -1,0 +1,182 @@
+import type { MediaDetails, MediaItem, MediaKind, SeasonDetails } from '../types'
+
+const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/'
+
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY?.trim()
+const ACCESS_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN?.trim()
+
+export const hasTmdbCredentials = Boolean(API_KEY || ACCESS_TOKEN)
+
+type RequestParams = Record<string, string | number | boolean | undefined>
+
+function buildQuery(params: RequestParams = {}) {
+  const search = new URLSearchParams()
+
+  if (API_KEY) {
+    search.set('api_key', API_KEY)
+  }
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      search.set(key, String(value))
+    }
+  })
+
+  return search
+}
+
+async function request<T>(path: string, params: RequestParams = {}, signal?: AbortSignal) {
+  if (!hasTmdbCredentials) {
+    throw new Error('Add VITE_TMDB_API_KEY or VITE_TMDB_ACCESS_TOKEN to enable TMDB data.')
+  }
+
+  const url = new URL(`${TMDB_BASE_URL}${path}`)
+  const query = buildQuery(params)
+  query.forEach((value, key) => url.searchParams.set(key, value))
+
+  const response = await fetch(url, {
+    signal,
+    headers: ACCESS_TOKEN ? { Authorization: `Bearer ${ACCESS_TOKEN}` } : undefined,
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(text || `TMDB request failed with status ${response.status}`)
+  }
+
+  return response.json() as Promise<T>
+}
+
+function uniqueMedia(items: MediaItem[]) {
+  const seen = new Set<string>()
+
+  return items.filter((item) => {
+    const type = normalizeMediaKind(item.media_type)
+    if (!type) {
+      return false
+    }
+
+    const key = `${type}-${item.id}`
+    if (seen.has(key)) {
+      return false
+    }
+
+    seen.add(key)
+    return true
+  })
+}
+
+export function normalizeMediaKind(mediaType?: string): MediaKind | null {
+  if (mediaType === 'movie' || mediaType === 'tv' || mediaType === 'anime') {
+    return mediaType
+  }
+
+  return null
+}
+
+export function mediaTypeFromItem(item: MediaItem): MediaKind {
+  return normalizeMediaKind(item.media_type) ?? (item.name ? 'tv' : 'movie')
+}
+
+export function titleFromItem(item: MediaItem) {
+  return item.title ?? item.name ?? 'Untitled'
+}
+
+export function subtitleFromItem(item: MediaItem) {
+  return item.release_date ?? item.first_air_date ?? ''
+}
+
+export function yearFromItem(item: MediaItem) {
+  const date = subtitleFromItem(item)
+  return date ? new Date(date).getFullYear() : null
+}
+
+export function imageUrl(path: string | null | undefined, size: 'w342' | 'w500' | 'w780' | 'w1280' = 'w780') {
+  if (!path) {
+    return ''
+  }
+
+  if (path.startsWith('http')) {
+    return path
+  }
+
+  return `${TMDB_IMAGE_BASE}${size}${path}`
+}
+
+export async function fetchTrendingTitles(signal?: AbortSignal) {
+  const data = await request<{ results: MediaItem[] }>('/trending/all/week', { language: 'en-US' }, signal)
+  return uniqueMedia(data.results)
+}
+
+export async function fetchRecommendations(signal?: AbortSignal) {
+  const [movies, tv] = await Promise.all([
+    request<{ results: MediaItem[] }>('/discover/movie', { sort_by: 'popularity.desc', include_adult: false, language: 'en-US', page: 1 }, signal),
+    request<{ results: MediaItem[] }>('/discover/tv', { sort_by: 'popularity.desc', include_adult: false, language: 'en-US', page: 1 }, signal),
+  ])
+
+  return uniqueMedia([
+    ...movies.results.map((item) => ({ ...item, media_type: 'movie' as const })),
+    ...tv.results.map((item) => ({ ...item, media_type: 'tv' as const })),
+  ])
+}
+
+export async function searchTitles(query: string, signal?: AbortSignal) {
+  const data = await request<{ results: MediaItem[] }>('/search/multi', { query, include_adult: false, language: 'en-US', page: 1 }, signal)
+  return uniqueMedia(data.results)
+}
+
+export async function fetchTitleDetails(mediaType: MediaKind, id: string, signal?: AbortSignal) {
+  return request<MediaDetails>(`/${mediaType}/${id}`, { language: 'en-US', append_to_response: 'credits,videos,images,external_ids,recommendations', include_image_language: 'en,null' }, signal)
+}
+
+export async function fetchPersonDetails(id: string, signal?: AbortSignal) {
+  return request<any>(`/person/${id}`, { language: 'en-US', append_to_response: 'combined_credits' }, signal)
+}
+
+export async function fetchSeasonDetails(id: string, seasonNumber: number, signal?: AbortSignal) {
+  return request<SeasonDetails>(`/tv/${id}/season/${seasonNumber}`, { language: 'en-US' }, signal)
+}
+
+export function buildVideasyUrl(
+  mediaType: MediaKind,
+  id: number,
+  season?: number,
+  episode?: number,
+  options?: {
+    color?: string
+    autoplay?: boolean
+  }
+) {
+  const isTv = mediaType === 'tv'
+  const isAnime = mediaType === 'anime'
+  
+  let base
+  if (isAnime) {
+    base = episode ? `https://player.videasy.net/anime/${id}/${episode}` : `https://player.videasy.net/anime/${id}`
+  } else if (isTv) {
+    base = `https://player.videasy.net/tv/${id}/${season ?? 1}/${episode ?? 1}`
+  } else {
+    base = `https://player.videasy.net/movie/${id}`
+  }
+
+  const params = new URLSearchParams()
+
+  if (options?.color) {
+    params.set('color', options.color.replace('#', ''))
+  }
+
+  if (isTv || isAnime) {
+    params.set('nextEpisode', 'true')
+    params.set('episodeSelector', 'true')
+    params.set('autoplayNextEpisode', 'true')
+  }
+
+  params.set('overlay', 'true')
+
+  return `${base}?${params.toString()}`
+}
+
+export function pickTrailer(videos?: { results: Array<{ site: string; type: string; official?: boolean; key: string }> }) {
+  return videos?.results.find((video) => video.site === 'YouTube' && /trailer|teaser/i.test(video.type)) ?? videos?.results.find((video) => video.site === 'YouTube') ?? null
+}
