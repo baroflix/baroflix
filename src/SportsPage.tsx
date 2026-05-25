@@ -683,7 +683,6 @@ export function SportsPage() {
                         allow="autoplay; fullscreen; picture-in-picture"
                         allowFullScreen
                         referrerPolicy="strict-origin-when-cross-origin"
-                        sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
                       />
                     ) : (
                       <div className="flex flex-col items-center gap-2 p-6 text-center">

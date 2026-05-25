@@ -486,7 +486,6 @@ export function PlayerFrame({ src, title }: { src: string; title: string }) {
           allowFullScreen
           loading="lazy"
           referrerPolicy="strict-origin-when-cross-origin"
-          sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
         />
       </div>
     </div>

@@ -201,7 +201,6 @@ export function FullscreenPlayer({
           allow="autoplay; fullscreen; picture-in-picture"
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
-          sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
         />
       </motion.div>
     </AnimatePresence>
