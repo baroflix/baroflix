@@ -91,7 +91,7 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
 
             {/* Logo text */}
             <motion.img
-              src="/SVG/Asset 1.svg"
+              src="/1x/Asset 1.webp"
               alt="Baroflix"
               initial={{ opacity: 0, y: 18, scale: 0.88 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}

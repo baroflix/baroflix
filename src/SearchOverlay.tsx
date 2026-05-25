@@ -11,9 +11,29 @@ import { mediaTypeFromItem } from './lib/tmdb'
 
 export function SearchOverlay({ onClose }: { onClose: () => void }) {
   const [searchParams, setSearchParams] = useSearchParams()
-  const query = searchParams.get('q') ?? ''
-  const homeState = useHomeCatalog(query)
-  const results = query.trim().length >= 2 ? homeState.searchResults : homeState.recommendations
+  const urlQuery = searchParams.get('q') ?? ''
+  const [localQuery, setLocalQuery] = useState(urlQuery)
+
+  // Sync back from URL if it changes (e.g., navigating back)
+  useEffect(() => {
+    setLocalQuery(urlQuery)
+  }, [urlQuery])
+
+  // Debounce syncing local query to the URL search params (which triggers the actual search)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localQuery !== urlQuery) {
+        const nextParams = new URLSearchParams(searchParams)
+        if (localQuery.trim()) nextParams.set('q', localQuery)
+        else nextParams.delete('q')
+        setSearchParams(nextParams, { replace: true })
+      }
+    }, 600) // 600ms delay between keypresses
+    return () => clearTimeout(timer)
+  }, [localQuery, urlQuery, searchParams, setSearchParams])
+
+  const homeState = useHomeCatalog(urlQuery)
+  const results = urlQuery.trim().length >= 2 ? homeState.searchResults : homeState.recommendations
   const [filter, setFilter] = useState<'all' | 'movie' | 'tv'>('all')
   const [isFocused, setIsFocused] = useState(false)
   const location = useLocation()
@@ -92,15 +112,10 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
               <input
                 id="search-input"
                 autoFocus
-                value={query}
+                value={localQuery}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
-                onChange={(e) => {
-                  const nextParams = new URLSearchParams(searchParams)
-                  if (e.target.value.trim()) nextParams.set('q', e.target.value)
-                  else nextParams.delete('q')
-                  setSearchParams(nextParams, { replace: true })
-                }}
+                onChange={(e) => setLocalQuery(e.target.value)}
                 placeholder="Search movies, TV shows, anime..."
                 className="flex-1 bg-transparent border-none outline-none text-base font-normal text-white placeholder-white/30 font-sans min-w-0 focus:ring-0 focus:outline-none"
                 style={{
@@ -115,15 +130,11 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
                   minWidth: 0,
                 }}
               />
-              {query && (
+              {localQuery && (
                 <button
                   type="button"
                   className="no-bg-hover"
-                  onClick={() => {
-                    const nextParams = new URLSearchParams(searchParams)
-                    nextParams.delete('q')
-                    setSearchParams(nextParams, { replace: true })
-                  }}
+                  onClick={() => setLocalQuery('')}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -210,9 +221,9 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
           }}
         >
           <div style={{ maxWidth: '1536px', margin: '0 auto' }}>
-            {query.trim().length >= 2 ? (
+            {urlQuery.trim().length >= 2 ? (
               <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 }}>
-                {homeState.loading ? 'Searching…' : `${filteredResults.length} result${filteredResults.length !== 1 ? 's' : ''} for "${query}"`}
+                {homeState.loading ? 'Searching…' : `${filteredResults.length} result${filteredResults.length !== 1 ? 's' : ''} for "${urlQuery}"`}
               </p>
             ) : (
               <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 16 }}>

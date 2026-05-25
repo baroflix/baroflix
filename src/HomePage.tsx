@@ -197,7 +197,7 @@ export function HomePage() {
         <div className="relative z-10 mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-8">
             <img
-                src="/SVG/Asset 1.svg"
+                src="/1x/Asset 1.webp"
                 alt="Baroflix"
                 className="block h-10 w-auto"
             />

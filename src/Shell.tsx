@@ -68,7 +68,7 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
             {/* Logo */}
             <Link to="/" className="no-bg-hover shrink-0">
               <img
-                  src="/SVG/Asset 1.svg"
+                  src="/1x/Asset 1.webp"
                   alt="Baroflix"
                   className="block h-10 w-auto"
               />
