@@ -8,6 +8,7 @@ import {
   fetchTopRatedTv,
   fetchClassics,
   fetchCollection,
+  fetchByGenre,
   hasTmdbCredentials,
   mediaTypeFromItem,
   searchTitles,
@@ -228,8 +229,21 @@ export function useBrowseData() {
     movies: MediaItem[]
     tv: MediaItem[]
     classics: MediaItem[]
+    action: MediaItem[]
+    comedy: MediaItem[]
+    scifi: MediaItem[]
+    animation: MediaItem[]
     loading: boolean
-  }>({ movies: [], tv: [], classics: [], loading: true })
+  }>({ 
+    movies: [], 
+    tv: [], 
+    classics: [], 
+    action: [], 
+    comedy: [], 
+    scifi: [], 
+    animation: [], 
+    loading: true 
+  })
 
   useEffect(() => {
     if (!hasTmdbCredentials) return
@@ -238,10 +252,23 @@ export function useBrowseData() {
     Promise.all([
       fetchTopRatedMovies(controller.signal),
       fetchTopRatedTv(controller.signal),
-      fetchClassics(controller.signal)
-    ]).then(([movies, tv, classics]) => {
+      fetchClassics(controller.signal),
+      fetchByGenre(28, 'movie', controller.signal),
+      fetchByGenre(35, 'movie', controller.signal),
+      fetchByGenre(878, 'movie', controller.signal),
+      fetchByGenre(16, 'tv', controller.signal),
+    ]).then(([movies, tv, classics, action, comedy, scifi, animation]) => {
       if (!controller.signal.aborted) {
-        setData({ movies, tv, classics, loading: false })
+        setData({ 
+          movies, 
+          tv, 
+          classics, 
+          action, 
+          comedy, 
+          scifi, 
+          animation, 
+          loading: false 
+        })
       }
     }).catch(() => {
       if (!controller.signal.aborted) {

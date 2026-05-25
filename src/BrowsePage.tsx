@@ -9,6 +9,12 @@ const FRANCHISES = [
   { id: 10, title: 'Star Wars' },
   { id: 1241, title: 'Harry Potter' },
   { id: 119, title: 'The Lord of the Rings' },
+  { id: 263, title: 'The Dark Knight Trilogy' },
+  { id: 531241, title: 'Spider-Man Collection' },
+  { id: 9485, title: 'Fast & Furious' },
+  { id: 84, title: 'Indiana Jones' },
+  { id: 295, title: 'Pirates of the Caribbean' },
+  { id: 87359, title: 'Mission: Impossible' },
   { id: 645, title: 'James Bond' },
   { id: 556, title: 'The Matrix' },
 ]
@@ -17,7 +23,6 @@ function CollectionCard({ id, fallbackTitle }: { id: number; fallbackTitle: stri
   const { details } = useCollectionDetails(String(id))
   
   const title = details?.name || fallbackTitle
-  // For collections, a backdrop is usually better for horizontal cards
   const image = imageUrl(details?.backdrop_path, 'w780') || imageUrl(details?.poster_path, 'w500')
   
   return (
@@ -33,7 +38,7 @@ function CollectionCard({ id, fallbackTitle }: { id: number; fallbackTitle: stri
       )}
       <div className="absolute inset-0 transition-opacity group-hover:opacity-100" style={{ background: 'linear-gradient(to top, rgba(8,8,8,0.95), transparent 70%)' }} />
       <div className="absolute bottom-5 left-5 right-5">
-        <h3 className="text-xl font-medium text-white truncate" style={{ fontFamily: 'DM Serif Display, serif' }}>
+        <h3 className="text-lg font-medium text-white truncate" style={{ fontFamily: 'DM Serif Display, serif' }}>
           {title}
         </h3>
       </div>
@@ -42,37 +47,58 @@ function CollectionCard({ id, fallbackTitle }: { id: number; fallbackTitle: stri
 }
 
 export function BrowsePage() {
-  const { movies, tv, classics, loading } = useBrowseData()
+  const { movies, tv, classics, action, comedy, scifi, animation, loading } = useBrowseData()
 
   if (!hasTmdbCredentials) {
     return <div className="px-6 pt-24 max-w-3xl mx-auto"><SetupNotice /></div>
   }
 
   return (
-    <div className="mx-auto max-w-screen-2xl px-6 pb-20 pt-28 space-y-16">
+    <div className="mx-auto max-w-screen-2xl px-6 pb-20 pt-28 space-y-12 animate-fade-up">
       
+      {/* Page Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl sm:text-4xl font-normal text-white" style={{ fontFamily: 'DM Serif Display, serif' }}>
+          Browse Catalog
+        </h1>
+        <p className="text-sm text-white/50 max-w-2xl leading-relaxed">
+          Explore movies, TV shows, timeless classics, and studio hubs across all your favorite genres and franchises.
+        </p>
+      </div>
+
       {/* ── Studio Hubs ─────────────────────────────────────────────────── */}
-      <section>
+      <section className="pt-2">
         <SectionHeader title="Studio Hubs" subtitle="Explore by network and production company" />
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
           {Object.values(NETWORKS).map(network => (
             <Link
               key={network.id}
               to={`/network/${network.id}`}
-              className="group relative flex items-center justify-center rounded-2xl aspect-video transition-transform hover:-translate-y-1 shadow-[0_4px_16px_rgba(0,0,0,0.4)] p-6"
-              style={{ background: network.color }}
+              className="group relative flex items-center justify-center rounded-2xl aspect-video transition-all hover:scale-[1.02] hover:border-white/20 border border-white/5 p-4 bg-white/2 shadow-[0_4px_24px_rgba(0,0,0,0.5)] overflow-hidden"
+              style={{ 
+                background: `linear-gradient(135deg, ${network.color}25, ${network.color}03)`,
+                backdropFilter: 'blur(8px)',
+              }}
             >
               {network.logo_path ? (
-                <img src={imageUrl(network.logo_path, 'w342')} alt={network.name} className="max-w-full max-h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity" style={{ filter: network.filter }} />
+                <img 
+                  src={imageUrl(network.logo_path, 'w342')} 
+                  alt={network.name} 
+                  className="max-w-[80%] max-h-[60%] object-contain opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300" 
+                  style={{ filter: network.filter }} 
+                />
               ) : (
                 <span 
-                  className="text-2xl sm:text-3xl font-black tracking-tighter opacity-80 group-hover:opacity-100 transition-opacity" 
-                  style={{ color: network.color === '#FFFFFF' ? 'black' : 'white' }}
+                  className="text-sm sm:text-base font-bold tracking-tighter opacity-70 group-hover:opacity-100 transition-opacity text-white" 
                 >
-                  {network.name.slice(0,1)}
+                  {network.name}
                 </span>
               )}
-              <div className="absolute inset-0 rounded-2xl border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+              {/* Hover highlight background */}
+              <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-[0.05] transition-opacity duration-300 pointer-events-none"
+                style={{ backgroundColor: network.color }}
+              />
             </Link>
           ))}
         </div>
@@ -80,10 +106,12 @@ export function BrowsePage() {
 
       {/* ── Franchises & Collections ────────────────────────────────────── */}
       <section>
-        <SectionHeader title="Franchises & Collections" subtitle="Epic marathons" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+        <SectionHeader title="Franchises & Collections" subtitle="Epic movie marathons and series collections" />
+        <div className="flex gap-4 overflow-x-auto pb-4 rail">
           {FRANCHISES.map(f => (
-            <CollectionCard key={f.id} id={f.id} fallbackTitle={f.title} />
+            <div key={f.id} className="w-[260px] sm:w-[300px] shrink-0">
+              <CollectionCard id={f.id} fallbackTitle={f.title} />
+            </div>
           ))}
         </div>
       </section>
@@ -98,6 +126,30 @@ export function BrowsePage() {
       <section>
         <SectionHeader title="Must-Watch Movies" subtitle="Highest rated of all time" />
         <ContentRail items={movies} loading={loading} />
+      </section>
+
+      {/* ── Action & Adventure ───────────────────────────────────────────── */}
+      <section>
+        <SectionHeader title="Action & Adventure" subtitle="High-octane blockbusters and thrilling journeys" />
+        <ContentRail items={action} loading={loading} />
+      </section>
+
+      {/* ── Comedy Hits ─────────────────────────────────────────────────── */}
+      <section>
+        <SectionHeader title="Comedy Hits" subtitle="Laughter is the best medicine" />
+        <ContentRail items={comedy} loading={loading} />
+      </section>
+
+      {/* ── Sci-Fi & Fantasy ────────────────────────────────────────────── */}
+      <section>
+        <SectionHeader title="Sci-Fi & Fantasy" subtitle="Out of this world imagination" />
+        <ContentRail items={scifi} loading={loading} />
+      </section>
+
+      {/* ── Animation & Anime ───────────────────────────────────────────── */}
+      <section>
+        <SectionHeader title="Animation & Anime" subtitle="Curated hand-drawn and digital masterpieces" />
+        <ContentRail items={animation} loading={loading} />
       </section>
 
       {/* ── Classics ────────────────────────────────────────────────────── */}

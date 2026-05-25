@@ -189,6 +189,19 @@ export async function fetchByNetwork(networkId: number, type: 'movie' | 'tv', si
   return uniqueMedia(data.results.map(item => ({ ...item, media_type: type })))
 }
 
+export async function fetchByGenre(genreId: number, type: 'movie' | 'tv', signal?: AbortSignal) {
+  const endpoint = type === 'tv' ? '/discover/tv' : '/discover/movie'
+  const data = await request<{ results: MediaItem[] }>(endpoint, {
+    language: 'en-US',
+    page: 1,
+    with_genres: genreId,
+    sort_by: 'popularity.desc',
+    include_adult: false,
+  }, signal)
+  
+  return uniqueMedia(data.results.map(item => ({ ...item, media_type: type })))
+}
+
 export function buildVideasyUrl(
   mediaType: MediaKind,
   id: number,
