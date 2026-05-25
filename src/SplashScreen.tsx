@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLocalStorageState, STORAGE_KEYS, defaultSettings, THEME_PRESETS } from './hooks'
 
 // ─────────────────────────────────────────────────────────────
 // SplashScreen
@@ -25,6 +26,9 @@ export const CATALOGUE_PHRASES = [
 ];
 
 export function SplashScreen({ children }: { children: React.ReactNode }) {
+  const [settings] = useLocalStorageState(STORAGE_KEYS.settings, defaultSettings)
+  const theme = THEME_PRESETS[settings.theme] || THEME_PRESETS['scarlet']
+  
   const [phrase] = useState(() => CATALOGUE_PHRASES[Math.floor(Math.random() * CATALOGUE_PHRASES.length)]);
   const [visible, setVisible] = useState(() => {
     // Don't show during hot-module reload in dev
@@ -79,7 +83,7 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
                 width: 480,
                 height: 480,
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(255,61,61,0.18) 0%, transparent 70%)',
+                background: `radial-gradient(circle, ${theme.glow.replace(/0\.(35|30|28)/, '0.18')} 0%, transparent 70%)`,
                 filter: 'blur(40px)',
                 pointerEvents: 'none',
               }}
@@ -108,8 +112,8 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
                 height: 3,
                 width: 80,
                 borderRadius: 99,
-                background: 'var(--accent, #ff3d3d)',
-                boxShadow: '0 0 18px var(--accent-glow, rgba(255,61,61,0.5))',
+                background: theme.accent,
+                boxShadow: `0 0 18px ${theme.glow.replace(/0\.(35|30|28)/, '0.50')}`,
                 transformOrigin: 'left',
                 position: 'relative',
               }}
