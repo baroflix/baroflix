@@ -39,6 +39,7 @@ GRANT SELECT ON public.allowed_emails TO anon;
 
 -- A user can only see their own email in the allowlist.
 -- This is much safer and avoids recursion compared to using is_allowed_email().
+DROP POLICY IF EXISTS "allowed_emails: select for allowed users" ON public.allowed_emails;
 CREATE POLICY "allowed_emails: select for allowed users"
   ON public.allowed_emails
   FOR SELECT
@@ -63,6 +64,7 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Any allowed user can read all profiles (needed to show
 -- comment author names).
+DROP POLICY IF EXISTS "profiles: select for allowed users" ON public.profiles;
 CREATE POLICY "profiles: select for allowed users"
   ON public.profiles
   FOR SELECT
@@ -70,6 +72,7 @@ CREATE POLICY "profiles: select for allowed users"
   USING (public.is_allowed_email());
 
 -- A user may only INSERT their own profile row.
+DROP POLICY IF EXISTS "profiles: insert own row" ON public.profiles;
 CREATE POLICY "profiles: insert own row"
   ON public.profiles
   FOR INSERT
@@ -77,6 +80,7 @@ CREATE POLICY "profiles: insert own row"
   WITH CHECK (id = auth.uid() AND public.is_allowed_email());
 
 -- A user may only UPDATE their own profile row.
+DROP POLICY IF EXISTS "profiles: update own row" ON public.profiles;
 CREATE POLICY "profiles: update own row"
   ON public.profiles
   FOR UPDATE
@@ -85,6 +89,7 @@ CREATE POLICY "profiles: update own row"
   WITH CHECK (id = auth.uid() AND public.is_allowed_email());
 
 -- A user may only DELETE their own profile row.
+DROP POLICY IF EXISTS "profiles: delete own row" ON public.profiles;
 CREATE POLICY "profiles: delete own row"
   ON public.profiles
   FOR DELETE
@@ -109,6 +114,7 @@ CREATE INDEX IF NOT EXISTS comments_user_id_idx  ON public.comments (user_id);
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 
 -- Any allowed user can read all comments.
+DROP POLICY IF EXISTS "comments: select for allowed users" ON public.comments;
 CREATE POLICY "comments: select for allowed users"
   ON public.comments
   FOR SELECT
@@ -116,6 +122,7 @@ CREATE POLICY "comments: select for allowed users"
   USING (public.is_allowed_email());
 
 -- An allowed user may insert their own comments.
+DROP POLICY IF EXISTS "comments: insert own" ON public.comments;
 CREATE POLICY "comments: insert own"
   ON public.comments
   FOR INSERT
@@ -123,6 +130,7 @@ CREATE POLICY "comments: insert own"
   WITH CHECK (user_id = auth.uid() AND public.is_allowed_email());
 
 -- A user may update only their own comments.
+DROP POLICY IF EXISTS "comments: update own" ON public.comments;
 CREATE POLICY "comments: update own"
   ON public.comments
   FOR UPDATE
@@ -131,6 +139,7 @@ CREATE POLICY "comments: update own"
   WITH CHECK (user_id = auth.uid() AND public.is_allowed_email());
 
 -- A user may delete only their own comments.
+DROP POLICY IF EXISTS "comments: delete own" ON public.comments;
 CREATE POLICY "comments: delete own"
   ON public.comments
   FOR DELETE
