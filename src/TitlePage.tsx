@@ -184,8 +184,13 @@ export function TitlePage() {
     } else {
       document.title = 'baroflix';
     }
-    return () => { document.title = 'baroflix' };
   }, [details, isEpisodic, title, activeSeason, activeEpisode, seasonDetails]);
+
+  useEffect(() => {
+    return () => {
+      document.title = 'baroflix';
+    };
+  }, []);
 
   return (
     <>
