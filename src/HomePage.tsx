@@ -196,13 +196,11 @@ export function HomePage() {
         {/* Nav row */}
         <div className="relative z-10 mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-8">
-            <Link
-              to="/"
-              className="no-bg-hover text-2xl font-bold tracking-widest text-white"
-              style={{ fontFamily: '"Bebas Neue", cursive', letterSpacing: '0.12em', fontSize: '1.6rem' }}
-            >
-              BAROFLIX
-            </Link>
+            <img
+                src="/SVG/Asset 1.svg"
+                alt="Baroflix"
+                className="block h-10 w-auto"
+            />
             <nav className="hidden sm:flex items-center gap-6">
               <Link to="/" className="text-sm font-semibold text-white hover:text-white transition-colors">
                 {navT.home}

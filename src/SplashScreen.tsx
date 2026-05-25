@@ -72,21 +72,18 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
             />
 
             {/* Logo text */}
-            <motion.div
-              initial={{ opacity: 0, y: 18, scale: 0.88 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-              style={{
-                fontFamily: '"Bebas Neue", cursive',
-                fontSize: 'clamp(3rem, 12vw, 6rem)',
-                letterSpacing: '0.16em',
-                color: 'white',
-                lineHeight: 1,
-                position: 'relative',
-              }}
-            >
-              BAROFLIX
-            </motion.div>
+            <motion.img
+                src="/SVG/Asset 1.svg"
+                alt="Baroflix"
+                initial={{ opacity: 0, y: 18, scale: 0.88 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+                style={{
+                  position: 'relative',
+                  width: 'min(70vw, 420px)',
+                  height: 'auto',
+                }}
+            />
 
             {/* Animated underline bar */}
             <motion.div

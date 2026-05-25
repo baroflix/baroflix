@@ -66,12 +66,12 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
         <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-6 gap-4">
           <div className="flex items-center gap-8">
             {/* Logo */}
-            <Link
-              to="/"
-              className="no-bg-hover text-2xl font-bold tracking-widest text-white shrink-0"
-              style={{ fontFamily: '"Bebas Neue", cursive', letterSpacing: '0.12em', fontSize: '1.6rem' }}
-            >
-              BAROFLIX
+            <Link to="/" className="no-bg-hover shrink-0">
+              <img
+                  src="/SVG/Asset 1.svg"
+                  alt="Baroflix"
+                  className="block h-10 w-auto"
+              />
             </Link>
 
             {/* Left nav */}
