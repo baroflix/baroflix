@@ -2,10 +2,10 @@ export const locales = {
   en: {
     nav: {
       home: 'Home',
-      browse: 'Browse',
-      comingSoon: 'Coming Soon',
+      browse: 'TV & Movies',
+      sports: 'Live Sports',
+      comingSoon: 'Releases',
       stats: 'Stats',
-      sports: 'Sports',
     },
     home: {
       continueWatching: 'Continue Watching',
@@ -32,10 +32,10 @@ export const locales = {
   pl: {
     nav: {
       home: 'Główna',
-      browse: 'Przeglądaj',
-      comingSoon: 'Wkrótce',
+      browse: 'Filmy i seriale',
+      sports: 'Sport na żywo',
+      comingSoon: 'Premiery',
       stats: 'Statystyki',
-      sports: 'Sport',
     },
     home: {
       continueWatching: 'Oglądaj Dalej',

@@ -82,14 +82,14 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
               <Link to="/browse" className="text-sm font-semibold text-white/70 hover:text-white transition-colors">
                 {t.browse}
               </Link>
+              <Link to="/sports" className="text-sm font-semibold text-white/70 hover:text-white transition-colors">
+                {t.sports}
+              </Link>
               <Link to="/coming-soon" className="text-sm font-semibold text-white/70 hover:text-white transition-colors">
                 {t.comingSoon}
               </Link>
               <Link to="/stats" className="text-sm font-semibold text-white/70 hover:text-white transition-colors">
                 {t.stats}
-              </Link>
-              <Link to="/sports" className="text-sm font-semibold text-white/70 hover:text-white transition-colors">
-                {t.sports}
               </Link>
             </nav>
           </div>

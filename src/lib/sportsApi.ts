@@ -81,7 +81,7 @@ export function getBadgeUrl(badgeName?: string): string {
   if (badgeName.startsWith('http://') || badgeName.startsWith('https://')) {
     return badgeName
   }
-  
+
   let path = badgeName
   // If badgeName is not already a path (does not start with '/' and doesn't contain '/images/'),
   // prefix it with the badge endpoint folder
@@ -137,16 +137,16 @@ export function getPosterUrl(posterName?: string): string {
 
 /** Dictionary mapping stream source keys to custom display names */
 export const STREAM_SOURCE_NAMES: Record<string, string> = {
-  admin: 'Main Feed',
-  alpha: 'Server Alpha',
-  bravo: 'Server Bravo',
-  charlie: 'Server Charlie',
-  delta: 'Server Delta',
-  echo: 'Server Echo',
-  foxtrot: 'Server Foxtrot',
-  golf: 'Server Golf',
-  hotel: 'Server Hotel',
-  intel: 'Server Intel',
+  admin: 'Ezreal',
+  alpha: 'Akali',
+  bravo: 'Twisted Fate',
+  charlie: 'Ahri',
+  delta: 'Katarina',
+  echo: 'Zyra',
+  foxtrot: 'Syndra',
+  golf: 'Diana',
+  hotel: 'Ashe',
+  intel: 'Veigar',
 }
 
 /** Get a friendly formatted name for a stream source */
