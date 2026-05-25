@@ -1,7 +1,1 @@
-<Link
-  to="/"
-  className="no-bg-hover text-2xl font-bold tracking-widest text-white shrink-0"
-  style={{ fontFamily: '"Bebas Neue", cursive', letterSpacing: '0.12em', fontSize: '1.6rem' }}
->
-  BAROFLIX
-</Link>barotv
+<img width="269" height="68" alt="Asset 1" src="https://github.com/user-attachments/assets/07da1d32-61f5-47ad-9904-4e079b1fe8b5" />
