@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Play, ArrowRight, Settings as SettingsIcon, Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Play, ArrowRight, Settings as SettingsIcon, Star, ChevronLeft, ChevronRight, User } from 'lucide-react'
 import heroFallback from './assets/hero.png'
 import { imageUrl, mediaTypeFromItem, titleFromItem, yearFromItem, hasTmdbCredentials, pickTrailer, buildVideasyUrl } from './lib/tmdb'
 import { useHomeCatalog, useFeaturedDetails, useLocalStorageState, defaultSettings, STORAGE_KEYS, THEME_PRESETS, upsertHistory, useWatchlist } from './hooks'
@@ -230,6 +230,18 @@ export function HomePage() {
               aria-label="Settings"
             >
               <SettingsIcon className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/profile"
+              className="flex items-center justify-center w-10 h-10 rounded-full transition-colors"
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.7)',
+              }}
+              aria-label="Profile"
+            >
+              <User className="w-4 h-4" />
             </Link>
           </div>
         </div>

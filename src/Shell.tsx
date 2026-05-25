@@ -1,5 +1,5 @@
 import { Link, useLocation, Outlet } from 'react-router-dom'
-import { Settings as SettingsIcon, Search } from 'lucide-react'
+import { Settings as SettingsIcon, Search, User } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import { THEME_PRESETS, useScrollDirection } from './hooks'
@@ -109,6 +109,14 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
               aria-label="Settings"
             >
               <SettingsIcon className="w-4 h-4" />
+            </Link>
+            <Link
+              to="/profile"
+              className="flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-colors"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+              aria-label="Profile"
+            >
+              <User className="w-4 h-4" />
             </Link>
           </div>
         </div>
