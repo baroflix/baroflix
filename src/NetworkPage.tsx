@@ -11,7 +11,7 @@ export const NETWORKS = {
   'disney': { id: 2, name: 'Disney', color: '#113CCF', type: 'tv' as const, logo_path: '/wdrCwmRnLFJhEoH8GSfymY85KHT.png', filter: 'brightness(0) invert(1)' },
   'marvel': { id: 420, name: 'Marvel Studios', color: '#FFFFFF', type: 'movie' as const, logo_path: '/hUzeosd33nzE5MCNsZxCGEKTXaQ.png', filter: 'none' },
   'pixar': { id: 3, name: 'Pixar', color: '#000000', type: 'movie' as const, logo_path: '/1TjvGVDMYsj6JBxOAkUHpPEwLf7.png', filter: 'brightness(0) invert(1)' },
-  'a24': { id: 41077, name: 'A24', color: '#FFFFFF', type: 'movie' as const, logo_path: '/1ZXsGaFPgrgS6ZZGS37AqD5uU12.png', filter: 'brightness(0)' },
+  'a24': { id: 41077, name: 'A24', color: '#000000', type: 'movie' as const, logo_path: '/1ZXsGaFPgrgS6ZZGS37AqD5uU12.png', filter: 'brightness(0) invert(1)' },
 }
 
 export function NetworkPage() {

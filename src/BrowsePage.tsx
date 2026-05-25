@@ -3,6 +3,8 @@ import { SectionHeader, ContentRail, SetupNotice } from './ui'
 import { hasTmdbCredentials, imageUrl } from './lib/tmdb'
 import { Link } from 'react-router-dom'
 import { NETWORKS } from './NetworkPage'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useRef } from 'react'
 
 const FRANCHISES = [
   { id: 86311, title: 'Marvel Cinematic Universe' },
@@ -48,6 +50,13 @@ function CollectionCard({ id, fallbackTitle }: { id: number; fallbackTitle: stri
 
 export function BrowsePage() {
   const { movies, tv, classics, action, comedy, scifi, animation, loading } = useBrowseData()
+  const franchisesRef = useRef<HTMLDivElement>(null)
+
+  function scrollFranchises(dir: 'left' | 'right') {
+    if (!franchisesRef.current) return
+    const scrollAmount = franchisesRef.current.clientWidth * 0.75
+    franchisesRef.current.scrollBy({ left: dir === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' })
+  }
 
   if (!hasTmdbCredentials) {
     return <div className="px-6 pt-24 max-w-3xl mx-auto"><SetupNotice /></div>
@@ -107,12 +116,36 @@ export function BrowsePage() {
       {/* ── Franchises & Collections ────────────────────────────────────── */}
       <section>
         <SectionHeader title="Franchises & Collections" subtitle="Epic movie marathons and series collections" />
-        <div className="flex gap-4 overflow-x-auto pb-4 rail">
-          {FRANCHISES.map(f => (
-            <div key={f.id} className="w-[260px] sm:w-[300px] shrink-0">
-              <CollectionCard id={f.id} fallbackTitle={f.title} />
-            </div>
-          ))}
+        <div className="relative group/rail">
+          {/* Left scroll arrow */}
+          <button
+            type="button"
+            onClick={() => scrollFranchises('left')}
+            aria-label="Scroll left"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 flex items-center justify-center w-9 h-9 rounded-full opacity-0 group-hover/rail:opacity-100 transition-opacity no-bg-hover"
+            style={{ background: 'rgba(8,8,8,0.9)', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 4px 24px rgba(0,0,0,0.5)', cursor: 'pointer' }}
+          >
+            <ChevronLeft className="w-4 h-4 text-white" />
+          </button>
+
+          <div ref={franchisesRef} className="flex gap-4 overflow-x-auto pb-4 rail">
+            {FRANCHISES.map(f => (
+              <div key={f.id} className="w-[260px] sm:w-[300px] shrink-0">
+                <CollectionCard id={f.id} fallbackTitle={f.title} />
+              </div>
+            ))}
+          </div>
+
+          {/* Right scroll arrow */}
+          <button
+            type="button"
+            onClick={() => scrollFranchises('right')}
+            aria-label="Scroll right"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 flex items-center justify-center w-9 h-9 rounded-full opacity-0 group-hover/rail:opacity-100 transition-opacity no-bg-hover"
+            style={{ background: 'rgba(8,8,8,0.9)', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 4px 24px rgba(0,0,0,0.5)', cursor: 'pointer' }}
+          >
+            <ChevronRight className="w-4 h-4 text-white" />
+          </button>
         </div>
       </section>
 
