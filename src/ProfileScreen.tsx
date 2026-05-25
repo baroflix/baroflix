@@ -78,7 +78,7 @@ export function ProfileScreen() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
           <Link
-            to="/settings"
+            to="/"
             style={{
               display: 'flex',
               alignItems: 'center',
