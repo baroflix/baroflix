@@ -49,7 +49,8 @@ export function TitlePage() {
   const [ratings, setRatings] = useRatings()
   
   const ratingKey = `${mediaType}-${id}`
-  const userRating = ratings[ratingKey] || 0
+  const userRatingObj = ratings[ratingKey]
+  const userRating = typeof userRatingObj === 'number' ? userRatingObj : (userRatingObj?.rating || 0)
   const [showCollectionModal, setShowCollectionModal] = useState(false)
 
   const historyEntry = useMemo(() => history.find(h => h.mediaType === mediaType && h.id === Number(id)), [history, mediaType, id])
@@ -303,7 +304,20 @@ export function TitlePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <StarRating 
                   value={userRating} 
-                  onChange={(v) => setRatings({ ...ratings, [ratingKey]: v })} 
+                  onChange={(v) => {
+                    setRatings({ 
+                      ...ratings, 
+                      [ratingKey]: {
+                        rating: v,
+                        id: details?.id || Number(id),
+                        mediaType,
+                        title: details ? titleFromItem(details) : '',
+                        posterPath: details?.poster_path,
+                        backdropPath: details?.backdrop_path,
+                        addedAt: Date.now()
+                      } 
+                    })
+                  }} 
                 />
                 
                 {details?.vote_average ? (

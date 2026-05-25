@@ -1,31 +1,64 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Edit2, Trash2, ArrowLeft } from 'lucide-react'
-import { useCustomLists } from './hooks'
+import { useCustomLists, useRatings } from './hooks'
 import type { CustomList } from './hooks'
 import { MediaGrid, EmptyPanel } from './ui'
 import { ImageUpload } from './components/CollectionsUi'
 
 export default function CollectionsPage() {
   const [lists, setLists] = useCustomLists()
+  const [ratingsRaw] = useRatings()
   const [activeListId, setActiveListId] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<'date' | 'rating' | 'name'>('date')
   
-  // Edit mode state
+  // Modals state
   const [editingList, setEditingList] = useState<CustomList | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
-  const activeList = lists.find((l: CustomList) => l.id === activeListId)
+  const watchedItems = Object.values(ratingsRaw || {})
+    .filter((r: any) => typeof r === 'object' && r.rating)
+    .map((r: any) => ({
+      mediaType: r.mediaType,
+      id: r.id,
+      title: r.title,
+      posterPath: r.posterPath,
+      backdropPath: r.backdropPath,
+      addedAt: r.addedAt,
+      rating: r.rating
+    }))
+    .sort((a, b) => b.rating - a.rating)
+
+  const watchedList: CustomList = {
+    id: 'watched',
+    name: 'Watched & Rated',
+    coverImage: null,
+    items: watchedItems as any
+  }
+
+  const allLists = [watchedList, ...lists]
+  const activeList = allLists.find((l: CustomList) => l.id === activeListId)
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (confirm('Are you sure you want to delete this collection?')) {
-      setLists(lists.filter((l: CustomList) => l.id !== id))
-      if (activeListId === id) setActiveListId(null)
-    }
+    setDeleteConfirmId(id)
+  }
+
+  const confirmDelete = () => {
+    if (!deleteConfirmId) return
+    setLists(lists.filter((l: CustomList) => l.id !== deleteConfirmId))
+    if (activeListId === deleteConfirmId) setActiveListId(null)
+    setDeleteConfirmId(null)
   }
 
   const saveEdit = () => {
     if (!editingList) return
-    setLists(lists.map((l: CustomList) => l.id === editingList.id ? editingList : l))
+    const isNew = !lists.some((l: CustomList) => l.id === editingList.id)
+    if (isNew) {
+      setLists([...lists, editingList])
+    } else {
+      setLists(lists.map((l: CustomList) => l.id === editingList.id ? editingList : l))
+    }
     setEditingList(null)
   }
 
@@ -47,18 +80,49 @@ export default function CollectionsPage() {
              ) : activeList.items[0]?.posterPath ? (
                 <img src={`https://image.tmdb.org/t/p/w342${activeList.items[0].posterPath}`} className="w-full h-full object-cover" />
              ) : (
-                <div className="w-full h-full flex items-center justify-center text-white/20">No Cover</div>
+                <div className="w-full h-full flex flex-col items-center justify-center bg-white/5 backdrop-blur-2xl p-4 text-center border border-white/10">
+                   <span className="text-4xl font-black text-white/20 mb-2">{activeList.name.charAt(0).toUpperCase()}</span>
+                   <span className="text-xs font-semibold text-white/40 uppercase tracking-widest break-words w-full line-clamp-2">{activeList.name}</span>
+                </div>
              )}
           </div>
-          <div className="pb-2">
+          <div className="pb-2 flex-1">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-2">{activeList.name}</h1>
             <p className="text-white/50">{activeList.items.length} items in this collection</p>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setSortBy('date')} 
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${sortBy === 'date' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+            >
+              Date Added
+            </button>
+            <button 
+              onClick={() => setSortBy('rating')} 
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${sortBy === 'rating' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+            >
+              Rating
+            </button>
+            <button 
+              onClick={() => setSortBy('name')} 
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${sortBy === 'name' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/50 hover:bg-white/10'}`}
+            >
+              Name
+            </button>
           </div>
         </div>
 
         {/* Map WatchlistEntry to MediaItem format for MediaGrid */}
         <MediaGrid 
-          items={activeList.items.map((i: any) => ({
+          items={[...activeList.items].sort((a: any, b: any) => {
+            if (sortBy === 'name') return (a.title || '').localeCompare(b.title || '')
+            if (sortBy === 'rating') {
+              const ratingA = a.rating || (typeof ratingsRaw[`${a.mediaType}-${a.id}`] === 'object' ? ratingsRaw[`${a.mediaType}-${a.id}`]?.rating : ratingsRaw[`${a.mediaType}-${a.id}`]) || 0
+              const ratingB = b.rating || (typeof ratingsRaw[`${b.mediaType}-${b.id}`] === 'object' ? ratingsRaw[`${b.mediaType}-${b.id}`]?.rating : ratingsRaw[`${b.mediaType}-${b.id}`]) || 0
+              return ratingB - ratingA
+            }
+            return (b.addedAt || 0) - (a.addedAt || 0)
+          }).map((i: any) => ({
             id: i.id,
             media_type: i.mediaType,
             title: i.title,
@@ -99,7 +163,7 @@ export default function CollectionsPage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
           <AnimatePresence>
-            {lists.map((list: CustomList) => (
+            {allLists.map((list: CustomList) => (
               <motion.div
                 layout
                 key={list.id}
@@ -115,27 +179,29 @@ export default function CollectionsPage() {
                   ) : list.items[0]?.posterPath ? (
                     <img src={`https://image.tmdb.org/t/p/w342${list.items[0].posterPath}`} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-white/20 gap-2">
-                       <Plus size={32} />
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-white/5 backdrop-blur-2xl p-4 text-center">
+                       <span className="text-6xl font-black text-white/10">{list.name.charAt(0).toUpperCase()}</span>
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80" />
                   
                   {/* Action buttons (hover) */}
-                  <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setEditingList(list) }}
-                      className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/20 hover:bg-white/20 hover:text-white text-white/70 transition-colors"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button 
-                      onClick={(e) => handleDelete(list.id, e)}
-                      className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/20 hover:bg-red-500/80 hover:text-white hover:border-red-500/50 text-white/70 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  {list.id !== 'watched' && (
+                    <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setEditingList(list) }}
+                        className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/20 hover:bg-white/20 hover:text-white text-white/70 transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        onClick={(e) => handleDelete(list.id, e)}
+                        className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/20 hover:bg-red-500/80 hover:text-white hover:border-red-500/50 text-white/70 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
 
                   {/* Title overlay */}
                   <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -188,6 +254,31 @@ export default function CollectionsPage() {
                   Save
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-[#111] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col items-center text-center">
+            <h3 className="text-xl font-bold text-white mb-2">Delete Collection</h3>
+            <p className="text-white/60 mb-6 text-sm">Are you sure you want to permanently delete this collection? This action cannot be undone.</p>
+            
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-3 rounded-xl font-semibold bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-3 rounded-xl font-semibold text-white bg-red-500/80 hover:bg-red-500 transition-colors shadow-[0_0_24px_rgba(239,68,68,0.3)]"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

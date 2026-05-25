@@ -46,6 +46,16 @@ export type WatchlistEntry = {
   addedAt: number
 }
 
+export type RatingEntry = {
+  rating: number
+  id: number
+  mediaType: string
+  title: string
+  posterPath?: string | null
+  backdropPath?: string | null
+  addedAt: number
+}
+
 export type ReminderEntry = {
   mediaType: MediaKind
   id: number
@@ -213,7 +223,7 @@ export function useReminders() {
 }
 
 export function useRatings() {
-  return useLocalStorageState<Record<string, number>>(STORAGE_KEYS.ratings, {})
+  return useLocalStorageState<Record<string, any>>(STORAGE_KEYS.ratings, {})
 }
 
 export function useCustomLists() {

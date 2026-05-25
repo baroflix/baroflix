@@ -211,7 +211,9 @@ export function AddToCollectionModal({ item, onClose }: { item: MediaItem; onClo
                         ) : list.items[0]?.posterPath ? (
                           <img src={imageUrl(list.items[0].posterPath, 'w342')} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white/30"><ImageIcon size={20} /></div>
+                          <div className="w-full h-full flex items-center justify-center bg-white/5 backdrop-blur-md">
+                            <span className="text-xl font-black text-white/30">{list.name.charAt(0).toUpperCase()}</span>
+                          </div>
                         )}
                       </div>
                       <div>

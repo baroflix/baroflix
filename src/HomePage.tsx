@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Play, ArrowRight, Settings as SettingsIcon, Star, ChevronLeft, ChevronRight, User } from 'lucide-react'
 import heroFallback from './assets/hero.png'
 import { imageUrl, mediaTypeFromItem, titleFromItem, yearFromItem, hasTmdbCredentials, pickTrailer, buildVideasyUrl } from './lib/tmdb'
-import { useHomeCatalog, useFeaturedDetails, useLocalStorageState, STORAGE_KEYS, THEME_PRESETS, upsertHistory, useWatchlist } from './hooks'
+import { useHomeCatalog, useFeaturedDetails, useLocalStorageState, STORAGE_KEYS, THEME_PRESETS, upsertHistory, useWatchlist, useCustomLists } from './hooks'
 import { useAuth } from './context/AuthContext'
 import type { WatchHistoryEntry } from './hooks'
 import type { MediaKind, MediaItem } from './types'
@@ -31,6 +31,7 @@ export function HomePage() {
   const [history, setHistory] = useLocalStorageState<WatchHistoryEntry[]>(STORAGE_KEYS.history, [])
   const { settings } = useAuth()
   const [watchlist] = useWatchlist()
+  const [lists] = useCustomLists()
   const [playback, setPlayback] = useState<{ mediaType: MediaKind; id: number; season?: number; episode?: number } | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const dragState = useRef<{ x: number } | null>(null)
@@ -409,15 +410,53 @@ export function HomePage() {
           </section>
         )}
 
+        {/* My Collections */}
+        {lists.length > 0 && (
+          <section>
+            <SectionHeader number={(history.length > 0 && watchlist.length > 0) ? "03" : (history.length > 0 || watchlist.length > 0) ? "02" : "01"} title="My Collections" subtitle="Your custom curated lists." />
+            <div className="rail">
+              {lists.map((list) => (
+                <Link
+                  key={list.id}
+                  to="/collections"
+                  className="group shrink-0 overflow-hidden transition-transform hover:-translate-y-1 block relative"
+                  style={{
+                    width: 220,
+                    aspectRatio: '2/3',
+                    borderRadius: 14,
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    background: 'rgba(255,255,255,0.04)',
+                  }}
+                >
+                  {list.coverImage ? (
+                    <img src={list.coverImage} className="w-full h-full object-cover" />
+                  ) : list.items[0]?.posterPath ? (
+                    <img src={imageUrl(list.items[0].posterPath, 'w342')} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-white/5 backdrop-blur-2xl p-4 text-center border border-white/10">
+                       <span className="text-6xl font-black text-white/20 mb-2">{list.name.charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="font-bold text-white text-lg leading-tight truncate drop-shadow-md">{list.name}</h3>
+                    <p className="text-xs text-white/60 font-medium drop-shadow-sm mt-0.5">{list.items.length} items</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Trending */}
         <section>
-          <SectionHeader number={history.length > 0 && watchlist.length > 0 ? "03" : (history.length > 0 || watchlist.length > 0) ? "02" : "01"} title={t.trending} subtitle={t.trendingSub} />
+          <SectionHeader number={(history.length > 0 && watchlist.length > 0 && lists.length > 0) ? "04" : ((history.length > 0 && watchlist.length > 0) || (history.length > 0 && lists.length > 0) || (watchlist.length > 0 && lists.length > 0)) ? "03" : (history.length > 0 || watchlist.length > 0 || lists.length > 0) ? "02" : "01"} title={t.trending} subtitle={t.trendingSub} />
           <ContentRail items={homeState.recommendations} loading={homeState.loading && !homeState.recommendations.length} />
         </section>
 
         {/* Browse All */}
         <section>
-          <SectionHeader number="03" title={t.browseAll} subtitle={t.browseAllSub} />
+          <SectionHeader number={(history.length > 0 && watchlist.length > 0 && lists.length > 0) ? "05" : ((history.length > 0 && watchlist.length > 0) || (history.length > 0 && lists.length > 0) || (watchlist.length > 0 && lists.length > 0)) ? "04" : (history.length > 0 || watchlist.length > 0 || lists.length > 0) ? "03" : "02"} title={t.browseAll} subtitle={t.browseAllSub} />
           <MediaGrid
             items={homeState.recommendations.slice(0, 20)}
             loading={homeState.loading && !homeState.recommendations.length}
