@@ -38,6 +38,7 @@ export function SportsPage() {
   }[]>([])
   const [chatContent, setChatContent] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
+  const [chatError, setChatError] = useState<string | null>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
   
   // UI states
@@ -80,18 +81,24 @@ export function SportsPage() {
         }
       })
 
+    // Replace colons to avoid breaking Supabase channel parsing
+    const safeChannelName = `sports_chat_${activeMatch.id.replace(/:/g, '_')}`
+
     // Subscribe to INSERT events
     const channel = supabase
-      .channel(`sports_chat:${activeMatch.id}`)
+      .channel(safeChannelName)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'sports_chat_messages',
-          filter: `match_id=eq.${activeMatch.id}`,
+          // No filter parameter here to prevent parsing failures on complex IDs (e.g. IDs containing colons)
         },
         async (payload) => {
+          // Filter in-memory instead
+          if (payload.new.match_id !== activeMatch.id) return
+
           // Fetch complete profile details for the new message
           const { data } = await supabase
             .from('sports_chat_messages')
@@ -125,6 +132,7 @@ export function SportsPage() {
     const msg = chatContent.trim()
     setChatContent('')
     setSendingMessage(true)
+    setChatError(null)
 
     const { data, error } = await supabase
       .from('sports_chat_messages')
@@ -139,6 +147,7 @@ export function SportsPage() {
     setSendingMessage(false)
     if (error) {
       console.error('Failed to send message:', error)
+      setChatError(error.message)
     } else if (data) {
       setChatMessages((prev) => {
         if (prev.some((m) => m.id === data.id)) return prev
@@ -756,17 +765,22 @@ export function SportsPage() {
                   {/* Chat Header */}
                   <div className="px-4 py-3.5 border-b border-white/5 bg-white/2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                      <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-red-500/10 border border-red-500/30 text-red-400 animate-pulse flex items-center gap-1 shrink-0">
+                        <span className="w-1 h-1 rounded-full bg-red-500" />
+                        Live
+                      </span>
+                      <MessageSquare className="w-4 h-4 text-white/40" />
                       <span className="text-xs font-semibold text-white">Live Chat</span>
                     </div>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-red-500/10 border border-red-500/30 text-red-400 animate-pulse flex items-center gap-1">
-                      <span className="w-1 h-1 rounded-full bg-red-500" />
-                      Live
-                    </span>
                   </div>
 
                   {/* Messages list */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[300px] lg:max-h-[none]" style={{ height: '350px' }}>
+                    {chatError && (
+                      <div className="p-2 mb-2 text-[10px] bg-red-500/15 border border-red-500/30 text-red-400 rounded-lg text-center font-sans">
+                        Error: {chatError}
+                      </div>
+                    )}
                     {chatMessages.length === 0 ? (
                       <div className="text-center text-xs text-white/30 py-16">
                         No messages yet. Say hello!
