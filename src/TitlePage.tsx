@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Link, useParams, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Play, ArrowRight, Star, ArrowLeft, Bell, BellRing, Search, X } from 'lucide-react'
+import { Play, ArrowRight, Star, ArrowLeft, Bell, BellRing, Search, X, Plus } from 'lucide-react'
 import heroFallback from './assets/hero.png'
 import {
   buildVideasyUrl,
@@ -18,11 +18,12 @@ import {
 import { fetchAnimeDetails, generateAnimeSeasonDetails } from './lib/anilist'
 import type { MediaDetails, SeasonDetails } from './types'
 import type { MediaKind } from './types'
-import { useLocalStorageState, formatDuration, formatMoney, parsePositiveNumber, upsertHistory, THEME_PRESETS, useProgressStore, useReminders } from './hooks'
+import { useLocalStorageState, formatDuration, formatMoney, parsePositiveNumber, upsertHistory, THEME_PRESETS, useProgressStore, useReminders, useRatings } from './hooks'
 import type { WatchHistoryEntry } from './hooks'
 import { STORAGE_KEYS } from './hooks'
 import { useAuth } from './context/AuthContext'
 import { Chip, FactBadge, CastCard, SetupNotice, EmptyPanel, WatchlistButton, MediaGrid } from './ui'
+import { StarRating, AddToCollectionModal } from './components/CollectionsUi'
 import { FullscreenPlayer } from './FullscreenPlayer'
 import { CommentsSection } from './components/CommentsSection'
 
@@ -45,6 +46,11 @@ export function TitlePage() {
   const { settings } = useAuth()
   const progressStore = useProgressStore()
   const [reminders, setReminders] = useReminders()
+  const [ratings, setRatings] = useRatings()
+  
+  const ratingKey = `${mediaType}-${id}`
+  const userRating = ratings[ratingKey] || 0
+  const [showCollectionModal, setShowCollectionModal] = useState(false)
 
   const historyEntry = useMemo(() => history.find(h => h.mediaType === mediaType && h.id === Number(id)), [history, mediaType, id])
 
@@ -210,6 +216,10 @@ export function TitlePage() {
         />
       )}
 
+      {showCollectionModal && details && (
+        <AddToCollectionModal item={details} onClose={() => setShowCollectionModal(false)} />
+      )}
+
       <div className="mx-auto max-w-screen-2xl px-6 pb-16 pt-20">
 
         {/* ── Back button above hero card ──────────────────────────────── */}
@@ -291,10 +301,16 @@ export function TitlePage() {
 
               {/* Meta chips */}
               <div className="flex flex-wrap items-center gap-2">
+                <StarRating 
+                  value={userRating} 
+                  onChange={(v) => setRatings({ ...ratings, [ratingKey]: v })} 
+                />
+                
                 {details?.vote_average ? (
                   <span
-                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
-                    style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', color: '#fbbf24' }}
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ml-2 border-l border-white/10 pl-4"
+                    style={{ background: 'rgba(245,158,11,0.05)', color: '#fbbf24' }}
+                    title="TMDB Score"
                   >
                     <Star className="w-3 h-3 fill-current" />
                     {details.vote_average.toFixed(1)}
@@ -335,7 +351,16 @@ export function TitlePage() {
                   {isEpisodic ? `Play S${activeSeason}E${activeEpisode}` : 'Play'}
                 </button>
                 {details && (
-                  <WatchlistButton item={details} className="px-6 py-3" />
+                  <>
+                    <WatchlistButton item={details} className="px-6 py-3" />
+                    <button
+                      onClick={() => setShowCollectionModal(true)}
+                      className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all hover:opacity-90"
+                      style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.85)' }}
+                    >
+                      <Plus className="w-4 h-4" /> Add to Collection
+                    </button>
+                  </>
                 )}
                 {isUnreleased && details && (
                   <button

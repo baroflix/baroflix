@@ -1,0 +1,197 @@
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, Edit2, Trash2, ArrowLeft } from 'lucide-react'
+import { useCustomLists } from '../hooks'
+import { MediaGrid, EmptyPanel } from '../ui'
+import { ImageUpload } from '../components/CollectionsUi'
+import type { CustomList } from '../types'
+
+export default function CollectionsPage() {
+  const [lists, setLists] = useCustomLists()
+  const [activeListId, setActiveListId] = useState<string | null>(null)
+  
+  // Edit mode state
+  const [editingList, setEditingList] = useState<CustomList | null>(null)
+
+  const activeList = lists.find(l => l.id === activeListId)
+
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (confirm('Are you sure you want to delete this collection?')) {
+      setLists(lists.filter(l => l.id !== id))
+      if (activeListId === id) setActiveListId(null)
+    }
+  }
+
+  const saveEdit = () => {
+    if (!editingList) return
+    setLists(lists.map(l => l.id === editingList.id ? editingList : l))
+    setEditingList(null)
+  }
+
+  // --- List View ---
+  if (activeList) {
+    return (
+      <div className="pt-24 pb-32 max-w-[1600px] mx-auto px-6 lg:px-12 w-full">
+        <button 
+          onClick={() => setActiveListId(null)}
+          className="flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-8"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Collections
+        </button>
+        
+        <div className="flex items-end gap-6 mb-10">
+          <div className="w-32 h-48 rounded-xl bg-white/5 overflow-hidden shrink-0 border border-white/10 shadow-2xl">
+             {activeList.coverImage ? (
+                <img src={activeList.coverImage} className="w-full h-full object-cover" />
+             ) : activeList.items[0]?.posterPath ? (
+                <img src={`https://image.tmdb.org/t/p/w342${activeList.items[0].posterPath}`} className="w-full h-full object-cover" />
+             ) : (
+                <div className="w-full h-full flex items-center justify-center text-white/20">No Cover</div>
+             )}
+          </div>
+          <div className="pb-2">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-2">{activeList.name}</h1>
+            <p className="text-white/50">{activeList.items.length} items in this collection</p>
+          </div>
+        </div>
+
+        {/* Map WatchlistEntry to MediaItem format for MediaGrid */}
+        <MediaGrid 
+          items={activeList.items.map(i => ({
+            id: i.id,
+            media_type: i.mediaType,
+            title: i.title,
+            name: i.title,
+            poster_path: i.posterPath,
+            backdrop_path: i.backdropPath,
+          })) as any[]}
+          loading={false}
+          emptyLabel="Add items to this collection from any movie or show page."
+          stagger
+        />
+      </div>
+    )
+  }
+
+  // --- Grid View ---
+  return (
+    <div className="pt-24 pb-32 max-w-[1600px] mx-auto px-6 lg:px-12 w-full">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">My Collections</h1>
+          <p className="text-white/50 mt-1">Create custom lists to organize your favorite movies and shows.</p>
+        </div>
+        <button
+          onClick={() => setEditingList({ id: Math.random().toString(36).substr(2, 9), name: 'New Collection', coverImage: null, items: [] })}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all hover:scale-105 active:scale-95"
+          style={{ background: 'var(--accent)', color: '#fff' }}
+        >
+          <Plus className="w-4 h-4" /> Create List
+        </button>
+      </div>
+
+      {!lists.length && !editingList ? (
+        <EmptyPanel 
+          label="No Collections Yet" 
+          description="Click 'Create List' to make your first custom collection."
+        />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+          <AnimatePresence>
+            {lists.map(list => (
+              <motion.div
+                layout
+                key={list.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="group relative cursor-pointer"
+                onClick={() => setActiveListId(list.id)}
+              >
+                <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-white/5 border border-white/10 relative transition-transform duration-300 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:shadow-[var(--accent-glow)]">
+                  {list.coverImage ? (
+                    <img src={list.coverImage} className="w-full h-full object-cover" />
+                  ) : list.items[0]?.posterPath ? (
+                    <img src={`https://image.tmdb.org/t/p/w342${list.items[0].posterPath}`} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-white/20 gap-2">
+                       <Plus size={32} />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80" />
+                  
+                  {/* Action buttons (hover) */}
+                  <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setEditingList(list) }}
+                      className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/20 hover:bg-white/20 hover:text-white text-white/70 transition-colors"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      onClick={(e) => handleDelete(list.id, e)}
+                      className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/20 hover:bg-red-500/80 hover:text-white hover:border-red-500/50 text-white/70 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Title overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="font-bold text-white text-lg leading-tight truncate drop-shadow-md">{list.name}</h3>
+                    <p className="text-xs text-white/60 font-medium drop-shadow-sm mt-0.5">{list.items.length} items</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Edit/Create Modal */}
+      {editingList && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-[#111] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col items-center">
+            <h3 className="text-xl font-bold text-white mb-6">
+              {lists.some(l => l.id === editingList.id) ? 'Edit Collection' : 'New Collection'}
+            </h3>
+            
+            <ImageUpload 
+              currentImage={editingList.coverImage} 
+              onImageOptimized={(dataUrl) => setEditingList({ ...editingList, coverImage: dataUrl })} 
+            />
+            
+            <div className="w-full mt-6 space-y-4">
+              <input
+                autoFocus
+                type="text"
+                placeholder="Collection Name"
+                value={editingList.name}
+                onChange={e => setEditingList({ ...editingList, name: e.target.value })}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:border-[var(--accent)]"
+              />
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setEditingList(null)}
+                  className="flex-1 py-3 rounded-xl font-semibold bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEdit}
+                  disabled={!editingList.name.trim()}
+                  className="flex-1 py-3 rounded-xl font-semibold disabled:opacity-50 transition-colors"
+                  style={{ background: 'var(--accent)', color: '#fff' }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

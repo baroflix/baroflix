@@ -66,6 +66,13 @@ export type HomeState = {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
+export type CustomList = {
+  id: string
+  name: string
+  coverImage?: string | null
+  items: WatchlistEntry[]
+}
+
 export const STORAGE_KEYS = {
   settings: 'baroflix.settings',
   history: 'baroflix.history',
@@ -73,6 +80,8 @@ export const STORAGE_KEYS = {
   progress: 'baroflix.progress',
   watchlist: 'baroflix.watchlist',
   reminders: 'baroflix.reminders',
+  ratings: 'baroflix.ratings',
+  customLists: 'baroflix.custom_lists',
 } as const
 
 export const THEME_PRESETS: Record<ThemeId, { label: string; accent: string; glow: string; surface: string }> = {
@@ -196,33 +205,19 @@ export function useProgressStore() {
 }
 
 export function useWatchlist() {
-  const [watchlist, setWatchlist] = useLocalStorageState<WatchlistEntry[]>(STORAGE_KEYS.watchlist, [])
-
-  useEffect(() => {
-    const handler = () => {
-      const raw = window.localStorage.getItem(STORAGE_KEYS.watchlist)
-      if (raw) setWatchlist(JSON.parse(raw))
-    }
-    window.addEventListener('watchlist-updated', handler)
-    return () => window.removeEventListener('watchlist-updated', handler)
-  }, [setWatchlist])
-
-  return [watchlist, setWatchlist] as const
+  return useLocalStorageState<WatchlistEntry[]>(STORAGE_KEYS.watchlist, [])
 }
 
 export function useReminders() {
-  const [reminders, setReminders] = useLocalStorageState<ReminderEntry[]>(STORAGE_KEYS.reminders, [])
+  return useLocalStorageState<ReminderEntry[]>(STORAGE_KEYS.reminders, [])
+}
 
-  useEffect(() => {
-    const handler = () => {
-      const raw = window.localStorage.getItem(STORAGE_KEYS.reminders)
-      if (raw) setReminders(JSON.parse(raw))
-    }
-    window.addEventListener('reminders-updated', handler)
-    return () => window.removeEventListener('reminders-updated', handler)
-  }, [setReminders])
+export function useRatings() {
+  return useLocalStorageState<Record<string, number>>(STORAGE_KEYS.ratings, {})
+}
 
-  return [reminders, setReminders] as const
+export function useCustomLists() {
+  return useLocalStorageState<CustomList[]>(STORAGE_KEYS.customLists, [])
 }
 
 export function useBrowseData() {

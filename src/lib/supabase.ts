@@ -31,6 +31,8 @@ export interface Profile {
   watch_history: any[] | null
   watch_progress: Record<string, number> | null
   watchlist: any[] | null
+  ratings: Record<string, number> | null
+  custom_lists: any[] | null
   updated_at: string | null
 }
 

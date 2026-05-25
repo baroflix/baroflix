@@ -68,7 +68,7 @@ async function assertEmailAllowed(email: string): Promise<void> {
 async function fetchProfile(userId: string): Promise<Profile | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('id, username, avatar_url, theme, language, watch_history, watch_progress, watchlist, updated_at')
+    .select('id, username, avatar_url, theme, language, watch_history, watch_progress, watchlist, ratings, custom_lists, updated_at')
     .eq('id', userId)
     .maybeSingle()
 
@@ -143,6 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const dbHistory = prof.watch_history
         const dbProgress = prof.watch_progress
         const dbWatchlist = prof.watchlist
+        const dbRatings = prof.ratings
+        const dbCustomLists = prof.custom_lists
 
         // 1. Sync theme/language
         if (dbTheme || dbLang) {
@@ -215,6 +217,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               supabase
                 .from('profiles')
                 .update({ watchlist: JSON.parse(localWatch) })
+                .eq('id', newSession.user.id)
+                .then()
+            }
+          } catch {}
+        }
+
+        // 5. Sync ratings
+        if (dbRatings && typeof dbRatings === 'object' && Object.keys(dbRatings).length > 0) {
+          window.localStorage.setItem(STORAGE_KEYS.ratings, JSON.stringify(dbRatings))
+          window.dispatchEvent(new CustomEvent(`local-storage-${STORAGE_KEYS.ratings}`, { detail: dbRatings }))
+        } else {
+          try {
+            const localRatings = window.localStorage.getItem(STORAGE_KEYS.ratings)
+            if (localRatings) {
+              supabase
+                .from('profiles')
+                .update({ ratings: JSON.parse(localRatings) })
+                .eq('id', newSession.user.id)
+                .then()
+            }
+          } catch {}
+        }
+
+        // 6. Sync custom lists
+        if (dbCustomLists && Array.isArray(dbCustomLists) && dbCustomLists.length > 0) {
+          window.localStorage.setItem(STORAGE_KEYS.customLists, JSON.stringify(dbCustomLists))
+          window.dispatchEvent(new CustomEvent(`local-storage-${STORAGE_KEYS.customLists}`, { detail: dbCustomLists }))
+        } else {
+          try {
+            const localLists = window.localStorage.getItem(STORAGE_KEYS.customLists)
+            if (localLists) {
+              supabase
+                .from('profiles')
+                .update({ custom_lists: JSON.parse(localLists) })
                 .eq('id', newSession.user.id)
                 .then()
             }
@@ -304,15 +340,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', session.user.id)
         .then()
     }
+    const handleRatings = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      supabase
+        .from('profiles')
+        .update({ ratings: detail })
+        .eq('id', session.user.id)
+        .then()
+    }
+    const handleCustomLists = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      supabase
+        .from('profiles')
+        .update({ custom_lists: detail })
+        .eq('id', session.user.id)
+        .then()
+    }
 
     window.addEventListener(`local-storage-${STORAGE_KEYS.history}`, handleHistory)
     window.addEventListener(`local-storage-${STORAGE_KEYS.progress}`, handleProgress)
     window.addEventListener(`local-storage-${STORAGE_KEYS.watchlist}`, handleWatchlist)
+    window.addEventListener(`local-storage-${STORAGE_KEYS.ratings}`, handleRatings)
+    window.addEventListener(`local-storage-${STORAGE_KEYS.customLists}`, handleCustomLists)
 
     return () => {
       window.removeEventListener(`local-storage-${STORAGE_KEYS.history}`, handleHistory)
       window.removeEventListener(`local-storage-${STORAGE_KEYS.progress}`, handleProgress)
       window.removeEventListener(`local-storage-${STORAGE_KEYS.watchlist}`, handleWatchlist)
+      window.removeEventListener(`local-storage-${STORAGE_KEYS.ratings}`, handleRatings)
+      window.removeEventListener(`local-storage-${STORAGE_KEYS.customLists}`, handleCustomLists)
     }
   }, [session])
 
@@ -325,11 +381,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.localStorage.removeItem(STORAGE_KEYS.history)
     window.localStorage.removeItem(STORAGE_KEYS.progress)
     window.localStorage.removeItem(STORAGE_KEYS.watchlist)
+    window.localStorage.removeItem(STORAGE_KEYS.ratings)
+    window.localStorage.removeItem(STORAGE_KEYS.customLists)
 
     // Update local react state to clear out the UI
     window.dispatchEvent(new CustomEvent(`local-storage-${STORAGE_KEYS.history}`, { detail: [] }))
     window.dispatchEvent(new CustomEvent(`local-storage-${STORAGE_KEYS.progress}`, { detail: {} }))
     window.dispatchEvent(new CustomEvent(`local-storage-${STORAGE_KEYS.watchlist}`, { detail: [] }))
+    window.dispatchEvent(new CustomEvent(`local-storage-${STORAGE_KEYS.ratings}`, { detail: {} }))
+    window.dispatchEvent(new CustomEvent(`local-storage-${STORAGE_KEYS.customLists}`, { detail: [] }))
   }, [])
 
   return (
