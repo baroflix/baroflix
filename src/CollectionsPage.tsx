@@ -165,7 +165,11 @@ export default function CollectionsPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="group relative cursor-pointer"
+              tabIndex={0}
               onClick={() => setActiveListId(list.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') setActiveListId(list.id)
+              }}
             >
               <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-white/5 border border-white/10 relative transition-transform duration-300 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:shadow-[var(--accent-glow)]">
                 {list.coverImage ? (

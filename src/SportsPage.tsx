@@ -493,7 +493,9 @@ export function SportsPage() {
                   key={match.id}
                   whileHover={{ y: -4, scale: 1.01 }}
                   onClick={() => handleOpenMatch(match)}
-                  className="p-5 flex flex-col justify-between cursor-pointer rounded-2xl relative overflow-hidden group transition-all"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleOpenMatch(match) }}
+                  className="p-5 flex flex-col justify-between cursor-pointer rounded-2xl relative overflow-hidden group transition-all outline-none focus:ring-2 focus:ring-[var(--accent)]"
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.07)',
@@ -681,6 +683,7 @@ export function SportsPage() {
                         allow="autoplay; fullscreen; picture-in-picture"
                         allowFullScreen
                         referrerPolicy="strict-origin-when-cross-origin"
+                        sandbox="allow-scripts allow-same-origin allow-presentation"
                       />
                     ) : (
                       <div className="flex flex-col items-center gap-2 p-6 text-center">

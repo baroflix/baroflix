@@ -52,6 +52,8 @@ export function ImageUpload({ onImageOptimized, currentImage }: { onImageOptimiz
   return (
     <div
       onClick={() => fileInputRef.current?.click()}
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') fileInputRef.current?.click() }}
       className="relative flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all"
       style={{
         width: 120,
@@ -267,15 +269,19 @@ export function StarRating({ value, onChange }: { value: number; onChange: (v: n
           <div key={starIndex} className="relative cursor-pointer w-7 h-7 flex items-center justify-center group" style={{ color: isFilled || isHalf ? '#f59e0b' : 'rgba(255,255,255,0.15)' }}>
             {/* Left half hit target */}
             <div 
-              className="absolute left-0 top-0 w-1/2 h-full z-10" 
+              className="absolute left-0 top-0 w-1/2 h-full z-10 outline-none focus:bg-white/10" 
+              tabIndex={0}
               onMouseEnter={() => setHoverValue(starIndex - 0.5)}
               onClick={() => onChange(starIndex - 0.5)}
+              onKeyDown={(e) => { if (e.key === 'Enter') onChange(starIndex - 0.5) }}
             />
             {/* Right half hit target */}
             <div 
-              className="absolute right-0 top-0 w-1/2 h-full z-10" 
+              className="absolute right-0 top-0 w-1/2 h-full z-10 outline-none focus:bg-white/10" 
+              tabIndex={0}
               onMouseEnter={() => setHoverValue(starIndex)}
               onClick={() => onChange(starIndex)}
+              onKeyDown={(e) => { if (e.key === 'Enter') onChange(starIndex) }}
             />
             
             <svg 
