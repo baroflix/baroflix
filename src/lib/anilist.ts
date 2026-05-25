@@ -115,49 +115,59 @@ export async function searchAnime(query: string, signal?: AbortSignal): Promise<
   return data.Page.media.map(mapToMediaItem)
 }
 
+const animeDetailsCache = new Map<string, Promise<MediaDetails>>()
+
 export async function fetchAnimeDetails(id: string, signal?: AbortSignal): Promise<MediaDetails> {
-  const data = await requestGraphql(DETAILS_QUERY, { id: parseInt(id, 10) }, signal)
-  const media = data.Media
-  
-  const item = mapToMediaItem(media)
-  
-  const episodesCount = media.episodes || 1
-  
-  const seasonSummary = {
-    id: media.id,
-    season_number: 1,
-    name: 'Season 1',
-    episode_count: episodesCount,
-  }
+  if (animeDetailsCache.has(id)) return animeDetailsCache.get(id)!
 
-  const cast = media.characters?.edges?.map((edge: any) => ({
-    id: edge.node.id,
-    name: edge.node.name.full,
-    character: edge.role,
-    profile_path: edge.node.image?.large,
-  })) || []
+  const promise = (async () => {
+    const data = await requestGraphql(DETAILS_QUERY, { id: parseInt(id, 10) }, signal)
+    const media = data.Media
+    const item = mapToMediaItem(media)
+    const episodesCount = media.episodes || 1
+    
+    const seasonSummary = {
+      id: media.id,
+      season_number: 1,
+      name: 'Season 1',
+      episode_count: episodesCount,
+    }
 
-  const videos: any[] = []
-  if (media.trailer && media.trailer.site === 'youtube') {
-    videos.push({
-      id: media.trailer.id,
-      key: media.trailer.id,
-      name: 'Trailer',
-      site: 'YouTube',
-      type: 'Trailer'
-    })
-  }
+    const cast = media.characters?.edges?.map((edge: any) => ({
+      id: edge.node.id,
+      name: edge.node.name.full,
+      character: edge.role,
+      profile_path: edge.node.image?.large,
+    })) || []
 
-  return {
-    ...item,
-    number_of_seasons: 1,
-    number_of_episodes: episodesCount,
-    genres: media.genres?.map((g: string, i: number) => ({ id: i, name: g })) || [],
-    seasons: [seasonSummary],
-    credits: { cast },
-    videos: { results: videos },
-  }
+    const videos: any[] = []
+    if (media.trailer && media.trailer.site === 'youtube') {
+      videos.push({
+        id: media.trailer.id,
+        key: media.trailer.id,
+        name: 'Trailer',
+        site: 'YouTube',
+        type: 'Trailer'
+      })
+    }
+
+    return {
+      ...item,
+      number_of_seasons: 1,
+      number_of_episodes: episodesCount,
+      genres: media.genres?.map((g: string, i: number) => ({ id: i, name: g })) || [],
+      seasons: [seasonSummary],
+      credits: { cast },
+      videos: { results: videos },
+    }
+  })()
+
+  animeDetailsCache.set(id, promise)
+  promise.catch(() => animeDetailsCache.delete(id))
+  
+  return promise
 }
+
 
 export function generateAnimeSeasonDetails(id: string, episodesCount: number) {
   const episodes = Array.from({ length: episodesCount }, (_, i) => ({

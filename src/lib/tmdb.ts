@@ -127,20 +127,46 @@ export async function searchTitles(query: string, signal?: AbortSignal) {
   return uniqueMedia(data.results)
 }
 
+const titleDetailsCache = new Map<string, Promise<MediaDetails>>()
+
 export async function fetchTitleDetails(mediaType: MediaKind, id: string, signal?: AbortSignal) {
-  return request<MediaDetails>(`/${mediaType}/${id}`, { language: 'en-US', append_to_response: 'credits,videos,images,external_ids,recommendations', include_image_language: 'en,null' }, signal)
+  const cacheKey = `${mediaType}-${id}`
+  if (titleDetailsCache.has(cacheKey)) return titleDetailsCache.get(cacheKey)!
+
+  const promise = request<MediaDetails>(`/${mediaType}/${id}`, { language: 'en-US', append_to_response: 'credits,videos,images,external_ids,recommendations', include_image_language: 'en,null' }, signal)
+  titleDetailsCache.set(cacheKey, promise)
+  
+  promise.catch(() => titleDetailsCache.delete(cacheKey))
+  return promise
 }
 
 export async function fetchPersonDetails(id: string, signal?: AbortSignal) {
   return request<any>(`/person/${id}`, { language: 'en-US', append_to_response: 'combined_credits' }, signal)
 }
 
+const seasonDetailsCache = new Map<string, Promise<SeasonDetails>>()
+
 export async function fetchSeasonDetails(id: string, seasonNumber: number, signal?: AbortSignal) {
-  return request<SeasonDetails>(`/tv/${id}/season/${seasonNumber}`, { language: 'en-US' }, signal)
+  const cacheKey = `${id}-${seasonNumber}`
+  if (seasonDetailsCache.has(cacheKey)) return seasonDetailsCache.get(cacheKey)!
+
+  const promise = request<SeasonDetails>(`/tv/${id}/season/${seasonNumber}`, { language: 'en-US' }, signal)
+  seasonDetailsCache.set(cacheKey, promise)
+
+  promise.catch(() => seasonDetailsCache.delete(cacheKey))
+  return promise
 }
 
+const collectionCache = new Map<string, Promise<CollectionDetails>>()
+
 export async function fetchCollection(id: string, signal?: AbortSignal) {
-  return request<CollectionDetails>(`/collection/${id}`, { language: 'en-US' }, signal)
+  if (collectionCache.has(id)) return collectionCache.get(id)!
+
+  const promise = request<CollectionDetails>(`/collection/${id}`, { language: 'en-US' }, signal)
+  collectionCache.set(id, promise)
+
+  promise.catch(() => collectionCache.delete(id))
+  return promise
 }
 
 export async function fetchTopRatedMovies(signal?: AbortSignal) {

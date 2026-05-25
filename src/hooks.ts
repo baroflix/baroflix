@@ -402,15 +402,12 @@ export function useHomeCatalog(query: string): HomeState {
 }
 
 export function useFeaturedDetails(item: MediaItem | null): MediaDetails | null {
-  const cache = useRef<Record<string, MediaDetails>>({})
   const [details, setDetails] = useState<MediaDetails | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
     async function load() {
       if (!item) { setDetails(null); return }
-      const key = `${mediaTypeFromItem(item)}-${item.id}`
-      if (cache.current[key]) { setDetails(cache.current[key]); return }
       try {
         let res
         if (mediaTypeFromItem(item) === 'anime') {
@@ -418,7 +415,6 @@ export function useFeaturedDetails(item: MediaItem | null): MediaDetails | null 
         } else {
           res = await fetchTitleDetails(mediaTypeFromItem(item), String(item.id), controller.signal)
         }
-        cache.current[key] = res
         setDetails(res)
       } catch {
         if (!controller.signal.aborted) setDetails(null)
