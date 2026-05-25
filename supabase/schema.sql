@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.allowed_emails (
 );
 
 -- ─────────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────
 -- 1.  HELPER: is_allowed_email()
 --     Used inside every RLS policy to avoid repetition.
 --     Defined AFTER allowed_emails so the body can be validated.
@@ -25,20 +26,24 @@ AS $$
   SELECT EXISTS (
     SELECT 1
     FROM public.allowed_emails
-    WHERE email = (SELECT auth.email())
+    WHERE email = (auth.jwt() ->> 'email')::text
   );
 $$;
 
 
 ALTER TABLE public.allowed_emails ENABLE ROW LEVEL SECURITY;
 
--- Only allowed users may see the allowlist (needed for the
--- client-side check in AuthContext).
+-- Explicitly grant SELECT so PostgREST doesn't return 403 Permission Denied
+GRANT SELECT ON public.allowed_emails TO authenticated;
+GRANT SELECT ON public.allowed_emails TO anon;
+
+-- A user can only see their own email in the allowlist.
+-- This is much safer and avoids recursion compared to using is_allowed_email().
 CREATE POLICY "allowed_emails: select for allowed users"
   ON public.allowed_emails
   FOR SELECT
   TO authenticated
-  USING (public.is_allowed_email());
+  USING (email = (auth.jwt() ->> 'email')::text);
 
 -- No INSERT / UPDATE / DELETE from the client — manage via
 -- the Supabase dashboard or service-role key.
