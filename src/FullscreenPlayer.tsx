@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { useEffect, useState, useRef } from 'react'
 import { X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { STORAGE_KEYS } from './hooks'
 
 // ─── FullscreenPlayer ─────────────────────────────────────────────────────────
 
@@ -46,10 +47,10 @@ export function FullscreenPlayer({
           // Save every 5 seconds to avoid thrashing localStorage
           if (Math.abs(payload.timestamp - lastSavedTime) >= 5) {
             lastSavedTime = payload.timestamp
-            const raw = window.localStorage.getItem('nextflix.progress')
+            const raw = window.localStorage.getItem(STORAGE_KEYS.progress)
             const data = raw ? JSON.parse(raw) : {}
             data[currentKey] = payload.timestamp
-            window.localStorage.setItem('nextflix.progress', JSON.stringify(data))
+            window.localStorage.setItem(STORAGE_KEYS.progress, JSON.stringify(data))
           }
         }
       } catch (err) {
@@ -65,10 +66,10 @@ export function FullscreenPlayer({
       // Ensure the absolute latest timestamp is saved before unmounting!
       if (currentKey && latestTimestamp > 0) {
         try {
-          const raw = window.localStorage.getItem('nextflix.progress')
+          const raw = window.localStorage.getItem(STORAGE_KEYS.progress)
           const data = raw ? JSON.parse(raw) : {}
           data[currentKey] = latestTimestamp
-          window.localStorage.setItem('nextflix.progress', JSON.stringify(data))
+          window.localStorage.setItem(STORAGE_KEYS.progress, JSON.stringify(data))
         } catch (e) { }
       }
 

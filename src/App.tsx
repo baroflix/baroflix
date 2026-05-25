@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Shell } from './Shell'
 import { HomePage } from './HomePage'
 import { TitlePage } from './TitlePage'
@@ -10,10 +10,21 @@ import { ComingSoonPage } from './ComingSoonPage'
 import { NetworkPage } from './NetworkPage'
 import { CollectionPage } from './CollectionPage'
 import { SettingsPage } from './SettingsPage'
+import { AuthScreen } from './AuthScreen'
+import { ProfileScreen } from './ProfileScreen'
 import { useLocalStorageState } from './hooks'
 import { defaultSettings, STORAGE_KEYS } from './hooks'
 import type { ThemeSettings } from './hooks'
 import { initSpatialNavigation } from './lib/spatial'
+import { useAuth } from './context/AuthContext'
+
+// Redirects unauthenticated users to the sign-in screen.
+function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { session, loading } = useAuth()
+  if (loading) return null
+  if (!session) return <Navigate replace to="/auth" />
+  return <>{children}</>
+}
 
 function App() {
   const [settings, setSettings] = useLocalStorageState<ThemeSettings>(STORAGE_KEYS.settings, defaultSettings)
@@ -24,7 +35,17 @@ function App() {
 
   return (
     <Routes>
-      <Route element={<Shell settings={settings} />}>
+      {/* Public: authentication screen */}
+      <Route path="/auth" element={<AuthScreen />} />
+
+      {/* Protected: all app content */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <Shell settings={settings} />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/" element={<HomePage />} />
         <Route path="browse" element={<BrowsePage />} />
         <Route path="stats" element={<StatsPage />} />
@@ -34,6 +55,7 @@ function App() {
         <Route path="/network/:id" element={<NetworkPage />} />
         <Route path="/collection/:id" element={<CollectionPage />} />
         <Route path="/settings" element={<SettingsPage settings={settings} onChange={setSettings} />} />
+        <Route path="/profile" element={<ProfileScreen />} />
         <Route path="*" element={<Navigate replace to="/" />} />
       </Route>
     </Routes>

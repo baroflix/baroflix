@@ -1,3 +1,3 @@
-- The logo on the home page is not changed
-- Make the gradients color change based on the theme selected in the settings. Also animate the gradient. Every accent color that is red by default should change based on the theme. 
-- You removed the wrong back button, keep the old one: it looked just like the trailer button, with an arrow and it was above the hero section of the show.
+- Rename the project to barotv
+- Add a simple splash screen for the first entry on the website with the logo animated.
+- Clean up the repository via .gitignore, and hide everything that should be hidden.

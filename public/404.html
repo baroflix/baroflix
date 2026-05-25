@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>BaroTV</title>
+    <script>
+      // GitHub Pages SPA redirect trick.
+      // When a user navigates directly to a deep URL (e.g. /title/movie/123),
+      // GitHub Pages returns this 404.html. We encode the path into a query
+      // parameter and redirect to the root, where the app reads it back and
+      // replaces the history entry with the real path.
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') + '/' +
+        '?p=' + encodeURIComponent(l.pathname + l.search) +
+        (l.hash ? '&h=' + encodeURIComponent(l.hash) : '')
+      );
+    </script>
+  </head>
+  <body></body>
+</html>

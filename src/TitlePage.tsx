@@ -23,6 +23,7 @@ import type { WatchHistoryEntry, ThemeSettings } from './hooks'
 import { STORAGE_KEYS } from './hooks'
 import { Chip, FactBadge, CastCard, SetupNotice, EmptyPanel, WatchlistButton, MediaGrid } from './ui'
 import { FullscreenPlayer } from './FullscreenPlayer'
+import { CommentsSection } from './components/CommentsSection'
 
 type PlaybackState = { mediaType: MediaKind; id: number; season?: number; episode?: number }
 
@@ -436,6 +437,9 @@ export function TitlePage() {
           )}
 
           {error && <SetupNotice compact message={error} />}
+
+          {/* Comments */}
+          {id && <CommentsSection movieId={id} />}
         </div>
       </div>
     </>

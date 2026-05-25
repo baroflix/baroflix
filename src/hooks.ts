@@ -66,12 +66,12 @@ export type HomeState = {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 export const STORAGE_KEYS = {
-  settings: 'nextflix.settings',
-  history: 'nextflix.history',
-  catalog: 'nextflix.home_catalog',
-  progress: 'nextflix.progress',
-  watchlist: 'nextflix.watchlist',
-  reminders: 'nextflix.reminders',
+  settings: 'barotv.settings',
+  history: 'barotv.history',
+  catalog: 'barotv.home_catalog',
+  progress: 'barotv.progress',
+  watchlist: 'barotv.watchlist',
+  reminders: 'barotv.reminders',
 } as const
 
 export const THEME_PRESETS: Record<ThemeId, { label: string; accent: string; glow: string; surface: string }> = {

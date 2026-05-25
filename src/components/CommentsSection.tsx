@@ -1,0 +1,399 @@
+import { useState, useEffect, useRef, type FormEvent } from 'react'
+import { User, Send, MessageSquare, Trash2 } from 'lucide-react'
+import { supabase, type Comment } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
+}
+
+// ─────────────────────────────────────────────────────────────
+// CommentsSection
+// Props: movieId — the TMDB id (as string) for the title page
+// ─────────────────────────────────────────────────────────────
+interface CommentsSectionProps {
+  movieId: string
+}
+
+export function CommentsSection({ movieId }: CommentsSectionProps) {
+  const { session, profile } = useAuth()
+  const [comments, setComments] = useState<Comment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [content, setContent] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const listEndRef = useRef<HTMLDivElement>(null)
+
+  // ── Fetch initial comments ──────────────────────────────────
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      const { data } = await supabase
+        .from('comments')
+        .select('id, movie_id, user_id, content, created_at, profiles(username, avatar_url)')
+        .eq('movie_id', movieId)
+        .order('created_at', { ascending: true })
+
+      if (!cancelled) {
+        setComments((data as unknown as Comment[]) ?? [])
+        setLoading(false)
+      }
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [movieId])
+
+  // ── Real-time subscription ──────────────────────────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel(`comments:movie_id=eq.${movieId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'comments',
+          filter: `movie_id=eq.${movieId}`,
+        },
+        async (payload) => {
+          // Fetch the full row with joined profile data
+          const { data } = await supabase
+            .from('comments')
+            .select('id, movie_id, user_id, content, created_at, profiles(username, avatar_url)')
+            .eq('id', payload.new.id)
+            .single()
+
+          if (data) {
+            setComments((prev) => [...prev, data as unknown as Comment])
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'comments',
+          filter: `movie_id=eq.${movieId}`,
+        },
+        (payload) => {
+          setComments((prev) => prev.filter((c) => c.id !== payload.old.id))
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [movieId])
+
+  // Auto-scroll to bottom when new comments arrive
+  useEffect(() => {
+    listEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [comments.length])
+
+  // ── Submit ──────────────────────────────────────────────────
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!session || !content.trim()) return
+    setSubmitting(true)
+    setSubmitError(null)
+
+    const { error } = await supabase.from('comments').insert({
+      movie_id: movieId,
+      user_id: session.user.id,
+      content: content.trim(),
+    })
+
+    setSubmitting(false)
+    if (error) {
+      setSubmitError(error.message)
+    } else {
+      setContent('')
+    }
+  }
+
+  // ── Delete own comment ──────────────────────────────────────
+  async function handleDelete(commentId: string) {
+    await supabase.from('comments').delete().eq('id', commentId)
+    // Optimistic — real-time listener will remove it from state
+    setComments((prev) => prev.filter((c) => c.id !== commentId))
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────
+  return (
+    <section
+      style={{
+        marginTop: '3rem',
+        padding: '1.5rem',
+        borderRadius: 20,
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.07)',
+      }}
+    >
+      {/* Section heading */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginBottom: '1.25rem',
+        }}
+      >
+        <MessageSquare size={16} style={{ color: 'var(--accent, #8b5cf6)' }} />
+        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'white' }}>
+          Comments
+        </h2>
+        {!loading && (
+          <span
+            style={{
+              marginLeft: 4,
+              fontSize: '0.75rem',
+              color: 'rgba(255,255,255,0.35)',
+              background: 'rgba(255,255,255,0.06)',
+              padding: '1px 8px',
+              borderRadius: 99,
+            }}
+          >
+            {comments.length}
+          </span>
+        )}
+      </div>
+
+      {/* Comment list */}
+      {loading ? (
+        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem', padding: '1rem 0' }}>
+          Loading comments…
+        </div>
+      ) : comments.length === 0 ? (
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '2rem 0',
+            color: 'rgba(255,255,255,0.25)',
+            fontSize: '0.85rem',
+          }}
+        >
+          No comments yet. Be the first!
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', marginBottom: '1.5rem' }}>
+          {comments.map((comment) => {
+            const author = comment.profiles
+            const isOwn = session?.user.id === comment.user_id
+            const displayName = author?.username || 'Anonymous'
+
+            return (
+              <div
+                key={comment.id}
+                style={{
+                  display: 'flex',
+                  gap: '0.75rem',
+                  alignItems: 'flex-start',
+                  padding: '0.875rem',
+                  borderRadius: 12,
+                  background: isOwn
+                    ? 'rgba(var(--accent-rgb, 139,92,246),0.07)'
+                    : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${isOwn ? 'rgba(var(--accent-rgb,139,92,246),0.2)' : 'rgba(255,255,255,0.05)'}`,
+                }}
+              >
+                {/* Avatar */}
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {author?.avatar_url ? (
+                    <img
+                      src={author.avatar_url}
+                      alt={displayName}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <User size={16} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                  )}
+                </div>
+
+                {/* Body */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      marginBottom: '0.25rem',
+                    }}
+                  >
+                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'white' }}>
+                      {displayName}
+                    </span>
+                    <span style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,0.3)' }}>
+                      {timeAgo(comment.created_at)}
+                    </span>
+                  </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: '0.875rem',
+                      color: 'rgba(255,255,255,0.8)',
+                      lineHeight: 1.55,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {comment.content}
+                  </p>
+                </div>
+
+                {/* Delete own comment */}
+                {isOwn && (
+                  <button
+                    type="button"
+                    aria-label="Delete comment"
+                    onClick={() => handleDelete(comment.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'rgba(255,255,255,0.2)',
+                      padding: 4,
+                      borderRadius: 6,
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      transition: 'color 0.15s',
+                    }}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = '#f87171')}
+                    onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.2)')}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            )
+          })}
+          <div ref={listEndRef} />
+        </div>
+      )}
+
+      {/* New comment form (only for signed-in users) */}
+      {session ? (
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {submitError && (
+            <p style={{ margin: 0, fontSize: '0.8rem', color: '#fca5a5' }}>{submitError}</p>
+          )}
+          <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'flex-end' }}>
+            {/* Mini avatar */}
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                overflow: 'hidden',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="You"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <User size={15} style={{ color: 'rgba(255,255,255,0.3)' }} />
+              )}
+            </div>
+
+            <textarea
+              id={`comment-input-${movieId}`}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Add a comment…"
+              rows={2}
+              maxLength={2000}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault()
+                  handleSubmit(e as unknown as FormEvent)
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: '0.625rem 0.875rem',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 10,
+                color: 'white',
+                fontSize: '0.875rem',
+                resize: 'none',
+                outline: 'none',
+                fontFamily: 'inherit',
+                lineHeight: 1.5,
+              }}
+            />
+
+            <button
+              id={`comment-submit-${movieId}`}
+              type="submit"
+              disabled={submitting || !content.trim()}
+              style={{
+                padding: '0.625rem 1rem',
+                borderRadius: 10,
+                border: 'none',
+                background: 'var(--accent, #8b5cf6)',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: submitting || !content.trim() ? 'not-allowed' : 'pointer',
+                opacity: submitting || !content.trim() ? 0.45 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                transition: 'opacity 0.2s',
+                flexShrink: 0,
+              }}
+            >
+              <Send size={14} />
+              Post
+            </button>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)' }}>
+            ⌘↵ to submit
+          </p>
+        </form>
+      ) : (
+        <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.3)' }}>
+          Sign in to leave a comment.
+        </p>
+      )}
+    </section>
+  )
+}
