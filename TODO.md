@@ -1,3 +1,0 @@
-- Rename the project to barotv
-- Add a simple splash screen for the first entry on the website with the logo animated.
-- Clean up the repository via .gitignore, and hide everything that should be hidden.
