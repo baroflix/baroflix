@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect, type ReactNode } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { Shell } from './Shell'
 import { HomePage } from './HomePage'
 import { TitlePage } from './TitlePage'
@@ -31,6 +32,9 @@ function App() {
   const { pathname } = useLocation()
 
   useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      document.documentElement.style.zoom = '0.85'
+    }
     return initSpatialNavigation()
   }, [])
 

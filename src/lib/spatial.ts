@@ -12,26 +12,35 @@ export function initSpatialNavigation() {
     })
   }
 
-  // Calculate geometric distance prioritizing alignment
+  // Calculate Euclidean distance from the closest edges, heavily penalizing non-overlapping cross-axis elements
   function getDistance(rect1: DOMRect, rect2: DOMRect, dir: 'up' | 'down' | 'left' | 'right') {
-    const c1 = { x: rect1.left + rect1.width / 2, y: rect1.top + rect1.height / 2 }
-    const c2 = { x: rect2.left + rect2.width / 2, y: rect2.top + rect2.height / 2 }
-    
-    // Check if rect2 is in the requested direction
-    if (dir === 'up' && c2.y >= c1.y - 10) return Infinity
-    if (dir === 'down' && c2.y <= c1.y + 10) return Infinity
-    if (dir === 'left' && c2.x >= c1.x - 10) return Infinity
-    if (dir === 'right' && c2.x <= c1.x + 10) return Infinity
+    let dx = 0;
+    let dy = 0;
+    let crossOverlap = 0;
 
-    const dx = c1.x - c2.x
-    const dy = c1.y - c2.y
-
-    // Heavily penalize items that are off-axis to prefer straight lines
-    if (dir === 'up' || dir === 'down') {
-      return Math.abs(dy) + Math.abs(dx) * 4 // Prefer vertical alignment
-    } else {
-      return Math.abs(dx) + Math.abs(dy) * 4 // Prefer horizontal alignment
+    if (dir === 'left') {
+      if (rect2.right >= rect1.left - 5) return Infinity;
+      dx = rect1.left - rect2.right;
+      crossOverlap = Math.max(0, Math.min(rect1.bottom, rect2.bottom) - Math.max(rect1.top, rect2.top));
+      dy = crossOverlap > 0 ? 0 : Math.min(Math.abs(rect1.top - rect2.bottom), Math.abs(rect1.bottom - rect2.top));
+    } else if (dir === 'right') {
+      if (rect2.left <= rect1.right + 5) return Infinity;
+      dx = rect2.left - rect1.right;
+      crossOverlap = Math.max(0, Math.min(rect1.bottom, rect2.bottom) - Math.max(rect1.top, rect2.top));
+      dy = crossOverlap > 0 ? 0 : Math.min(Math.abs(rect1.top - rect2.bottom), Math.abs(rect1.bottom - rect2.top));
+    } else if (dir === 'up') {
+      if (rect2.bottom >= rect1.top - 5) return Infinity;
+      dy = rect1.top - rect2.bottom;
+      crossOverlap = Math.max(0, Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left));
+      dx = crossOverlap > 0 ? 0 : Math.min(Math.abs(rect1.left - rect2.right), Math.abs(rect1.right - rect2.left));
+    } else if (dir === 'down') {
+      if (rect2.top <= rect1.bottom + 5) return Infinity;
+      dy = rect2.top - rect1.bottom;
+      crossOverlap = Math.max(0, Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left));
+      dx = crossOverlap > 0 ? 0 : Math.min(Math.abs(rect1.left - rect2.right), Math.abs(rect1.right - rect2.left));
     }
+
+    return Math.sqrt(dx * dx + dy * dy) + (crossOverlap > 0 ? 0 : 10000);
   }
 
   function handleKeyDown(e: KeyboardEvent) {

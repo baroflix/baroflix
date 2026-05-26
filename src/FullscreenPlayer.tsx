@@ -19,6 +19,14 @@ export function FullscreenPlayer({
 }) {
   const [showControls, setShowControls] = useState(true)
   const timeoutRef = useRef<number | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+
+  useEffect(() => {
+    // Automatically focus the iframe so the TV remote can interact with the video player immediately
+    if (iframeRef.current) {
+      iframeRef.current.focus()
+    }
+  }, [])
 
   // Real progress tracking from videasy player
   useEffect(() => {
@@ -189,6 +197,7 @@ export function FullscreenPlayer({
 
         {/* ── iframe — takes up the full screen ──────────────────────── */}
         <iframe
+          ref={iframeRef}
           title="Video player"
           src={src}
           style={{
