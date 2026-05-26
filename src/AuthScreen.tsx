@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Globe, AlertTriangle } from 'lucide-react'
+import { Globe, AlertTriangle, RefreshCw } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { CATALOGUE_PHRASES } from './SplashScreen'
 import { Capacitor } from '@capacitor/core'
@@ -19,6 +19,8 @@ export function AuthScreen() {
   const [error, setError] = useState<string | null>(null)
   const [tvCode, setTvCode] = useState('')
   const [tvConnected, setTvConnected] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(120)
 
   const isTv = Capacitor.isNativePlatform()
   // Capacitor runs on http://localhost, so we need the actual deployed URL (or PC's local IP for testing)
@@ -35,13 +37,9 @@ export function AuthScreen() {
     if (!isTv) return
     
     let channel: any
-    let intervalId: number | null = null
+    let timerId: number | null = null
 
-    const generateCodeAndListen = () => {
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-
+    const setupChannel = () => {
       const code = Math.random().toString(36).substring(2, 8).toUpperCase()
       setTvCode(code)
 
@@ -50,7 +48,7 @@ export function AuthScreen() {
         if (payload.payload?.access_token && payload.payload?.refresh_token) {
           setTvConnected(true)
           setLoading(true)
-          if (intervalId) clearInterval(intervalId)
+          if (timerId) clearInterval(timerId)
           
           const { error } = await supabase.auth.setSession({ 
             access_token: payload.payload.access_token, 
@@ -60,23 +58,30 @@ export function AuthScreen() {
              setError(error.message)
              setTvConnected(false)
              setLoading(false)
-             // Restart the loop if it failed
-             generateCodeAndListen()
-             intervalId = window.setInterval(generateCodeAndListen, 120000)
+             setRefreshTrigger(r => r + 1)
           }
         }
       }).subscribe()
     }
 
-    generateCodeAndListen()
-    // Regenerate the QR code and channel every 2 minutes
-    intervalId = window.setInterval(generateCodeAndListen, 120000)
+    setupChannel()
+    setTimeLeft(120)
+
+    timerId = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          setRefreshTrigger((r) => r + 1)
+          return 120
+        }
+        return t - 1
+      })
+    }, 1000)
 
     return () => {
       if (channel) supabase.removeChannel(channel)
-      if (intervalId) clearInterval(intervalId)
+      if (timerId) clearInterval(timerId)
     }
-  }, [isTv])
+  }, [isTv, refreshTrigger])
 
   async function handleGoogle() {
     setError(null)
@@ -173,10 +178,35 @@ export function AuthScreen() {
                 />
               </div>
               
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
                 Or visit <strong style={{color:'white'}}>{siteUrl.replace(/^https?:\/\//, '')}/tv-login</strong><br/>
                 and enter code <strong style={{color:'white', letterSpacing: 2}}>{tvCode}</strong>
               </p>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+                  Expires in {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRefreshTrigger(r => r + 1)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.75rem',
+                    color: 'white',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    padding: '0.4rem 0.75rem',
+                    borderRadius: '20px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <RefreshCw size={12} />
+                  New Code
+                </button>
+              </div>
 
               {tvConnected && (
                  <p style={{ color: '#10b981', marginTop: '1rem', fontWeight: 'bold' }}>Connecting...</p>
