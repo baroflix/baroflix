@@ -1,21 +1,28 @@
-import { useState, type FormEvent, useEffect } from 'react'
-import { Mail, Lock, LogIn, Globe, AlertTriangle, Eye, EyeOff } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Globe, AlertTriangle } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { CATALOGUE_PHRASES } from './SplashScreen'
+import { Capacitor } from '@capacitor/core'
+import { QRCodeSVG } from 'qrcode.react'
+import { supabase } from './lib/supabase'
 
 // ─────────────────────────────────────────────────────────────
 // AuthScreen
 // Matches the existing dark/glassmorphism design language.
 // ─────────────────────────────────────────────────────────────
 export function AuthScreen() {
-  const { signInWithEmail, signInWithGoogle, authError, clearAuthError } = useAuth()
+  const { signInWithGoogle, authError, clearAuthError } = useAuth()
 
   const [phrase] = useState(() => CATALOGUE_PHRASES[Math.floor(Math.random() * CATALOGUE_PHRASES.length)])
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [tvCode, setTvCode] = useState('')
+  const [tvConnected, setTvConnected] = useState(false)
+
+  const isTv = Capacitor.isNativePlatform()
+  // Capacitor runs on http://localhost, so we need the actual deployed URL (or PC's local IP for testing)
+  const siteUrl = import.meta.env.VITE_SITE_URL || 'https://YOUR_WEBSITE.com'
 
   useEffect(() => {
     clearAuthError()
@@ -24,19 +31,33 @@ export function AuthScreen() {
     }
   }, [clearAuthError])
 
-  async function handleEmailSubmit(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
-    clearAuthError()
-    setLoading(true)
-    try {
-      await signInWithEmail(email, password)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign-in failed.')
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    if (!isTv) return
+    
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
+    setTvCode(code)
+
+    const channel = supabase.channel(`tv-auth-${code}`)
+    channel.on('broadcast', { event: 'login' }, async (payload) => {
+      if (payload.payload?.access_token && payload.payload?.refresh_token) {
+        setTvConnected(true)
+        setLoading(true)
+        const { error } = await supabase.auth.setSession({ 
+          access_token: payload.payload.access_token, 
+          refresh_token: payload.payload.refresh_token 
+        })
+        if (error) {
+           setError(error.message)
+           setTvConnected(false)
+           setLoading(false)
+        }
+      }
+    }).subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
     }
-  }
+  }, [isTv])
 
   async function handleGoogle() {
     setError(null)
@@ -119,189 +140,57 @@ export function AuthScreen() {
             </div>
           )}
 
-          {/* Email / Password form */}
-          <form onSubmit={handleEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="auth-email"
-                style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.4rem' }}
-              >
-                Email address
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Mail
-                  size={15}
-                  style={{
-                    position: 'absolute',
-                    left: 14,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'rgba(255,255,255,0.3)',
-                    pointerEvents: 'none',
-                  }}
-                />
-                <input
-                  id="auth-email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    paddingLeft: 40,
-                    paddingRight: 14,
-                    paddingTop: 10,
-                    paddingBottom: 10,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 10,
-                    color: 'white',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                  }}
+
+
+          {/* TV OR Web Display */}
+          {isTv ? (
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ color: 'white', marginBottom: '1.5rem', fontWeight: 600 }}>Scan to sign in</p>
+              
+              <div style={{ background: 'white', padding: '1rem', borderRadius: '1rem', display: 'inline-block', marginBottom: '1.5rem' }}>
+                <QRCodeSVG 
+                  value={`${siteUrl}/tv-login?code=${tvCode}`}
+                  size={180}
                 />
               </div>
-            </div>
+              
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}>
+                Or visit <strong style={{color:'white'}}>{siteUrl.replace(/^https?:\/\//, '')}/tv-login</strong><br/>
+                and enter code <strong style={{color:'white', letterSpacing: 2}}>{tvCode}</strong>
+              </p>
 
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="auth-password"
-                style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.4rem' }}
-              >
-                Password
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Lock
-                  size={15}
-                  style={{
-                    position: 'absolute',
-                    left: 14,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'rgba(255,255,255,0.3)',
-                    pointerEvents: 'none',
-                  }}
-                />
-                <input
-                  id="auth-password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    paddingLeft: 40,
-                    paddingRight: 42,
-                    paddingTop: 10,
-                    paddingBottom: 10,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 10,
-                    color: 'white',
-                    fontSize: '0.9rem',
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  style={{
-                    position: 'absolute',
-                    right: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'rgba(255,255,255,0.3)',
-                    display: 'flex',
-                    padding: 2,
-                  }}
-                >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
+              {tvConnected && (
+                 <p style={{ color: '#10b981', marginTop: '1rem', fontWeight: 'bold' }}>Connecting...</p>
+              )}
             </div>
-
-            {/* Submit */}
+          ) : (
             <button
-              id="auth-submit-email"
-              type="submit"
+              id="auth-submit-google"
+              type="button"
               disabled={loading}
+              onClick={handleGoogle}
               style={{
-                marginTop: '0.25rem',
                 width: '100%',
                 padding: '0.7rem',
                 borderRadius: 10,
-                border: 'none',
-                background: 'var(--accent, #8b5cf6)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.05)',
                 color: 'white',
-                fontWeight: 600,
+                fontWeight: 500,
                 fontSize: '0.9rem',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.6 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.5rem',
-                transition: 'opacity 0.2s',
+                gap: '0.625rem',
+                transition: 'background 0.2s',
               }}
             >
-              <LogIn size={16} />
-              {loading ? 'Signing in…' : 'Sign in'}
+              <Globe size={16} />
+              Continue with Google
             </button>
-          </form>
-
-          {/* Divider */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              margin: '1.25rem 0',
-            }}
-          >
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)' }}>or</span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-          </div>
-
-          {/* Google OAuth */}
-          <button
-            id="auth-submit-google"
-            type="button"
-            disabled={loading}
-            onClick={handleGoogle}
-            style={{
-              width: '100%',
-              padding: '0.7rem',
-              borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(255,255,255,0.05)',
-              color: 'white',
-              fontWeight: 500,
-              fontSize: '0.9rem',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.6 : 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.625rem',
-              transition: 'background 0.2s',
-            }}
-          >
-            <Globe size={16} />
-            Continue with Google
-          </button>
+          )}
         </div>
 
         <p

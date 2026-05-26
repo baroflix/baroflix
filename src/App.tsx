@@ -11,6 +11,7 @@ import { NetworkPage } from './NetworkPage'
 import { CollectionPage } from './CollectionPage'
 import { SettingsPage } from './SettingsPage'
 import { AuthScreen } from './AuthScreen'
+import { TvLoginScreen } from './TvLoginScreen'
 import { ProfileScreen } from './ProfileScreen'
 import CollectionsPage from './CollectionsPage'
 import { SportsPage } from './SportsPage'
@@ -41,6 +42,7 @@ function App() {
     <Routes>
       {/* Public: authentication screen */}
       <Route path="/auth" element={<AuthScreen />} />
+      <Route path="/tv-login" element={<TvLoginScreen />} />
 
       {/* Protected: all app content */}
       <Route

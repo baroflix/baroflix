@@ -5,15 +5,6 @@ import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { SplashScreen } from './SplashScreen.tsx'
-import SpatialNavigation from 'spatial-navigation-js'
-
-// Initialize TV remote spatial navigation globally
-SpatialNavigation.init()
-SpatialNavigation.add({
-  selector: 'a, button, input, textarea, select, [tabindex="0"]'
-})
-SpatialNavigation.makeFocusable()
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
