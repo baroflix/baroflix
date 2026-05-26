@@ -2,6 +2,8 @@ import { createPortal } from 'react-dom'
 import { useEffect, useState, useRef } from 'react'
 import { X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { App as CapApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { STORAGE_KEYS } from './hooks'
 
 // ─── FullscreenPlayer ─────────────────────────────────────────────────────────
@@ -94,13 +96,24 @@ export function FullscreenPlayer({
     timeoutRef.current = window.setTimeout(() => setShowControls(false), 5000)
   }
 
-  // Close on Escape key
+  // Close on Escape key or Android back button
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' || e.key === 'Backspace') onClose()
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+
+    let listener: any = null
+    if (Capacitor.isNativePlatform()) {
+      CapApp.addListener('backButton', () => {
+        onClose()
+      }).then(l => listener = l)
+    }
+
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      if (listener) listener.remove()
+    }
   }, [onClose])
 
   // Prevent body scroll while player is open

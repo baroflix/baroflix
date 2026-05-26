@@ -44,6 +44,11 @@ export function initSpatialNavigation() {
   }
 
   function handleKeyDown(e: KeyboardEvent) {
+    // Ignore input if user is in an iframe, let the iframe handle its own navigation
+    if (document.activeElement?.tagName === 'IFRAME') {
+      return
+    }
+
     // Ignore input if user is typing in a text field
     if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
       if (e.key === 'Escape') {
