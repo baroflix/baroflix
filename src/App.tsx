@@ -15,6 +15,7 @@ import { TvLoginScreen } from './TvLoginScreen'
 import { ProfileScreen } from './ProfileScreen'
 import CollectionsPage from './CollectionsPage'
 import { SportsPage } from './SportsPage'
+import { DownloadPage } from './DownloadPage'
 import { initSpatialNavigation } from './lib/spatial'
 import { useAuth } from './context/AuthContext'
 
@@ -64,6 +65,7 @@ function App() {
         <Route path="/settings" element={<SettingsPage settings={settings} onChange={updateSettings} />} />
         <Route path="/profile" element={<ProfileScreen />} />
         <Route path="/sports" element={<SportsPage />} />
+        <Route path="/download" element={<DownloadPage />} />
         <Route path="*" element={<Navigate replace to="/" />} />
       </Route>
     </Routes>
