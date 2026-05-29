@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   watch_history  JSONB       DEFAULT '[]'::jsonb,
   watch_progress JSONB       DEFAULT '{}'::jsonb,
   watchlist      JSONB       DEFAULT '[]'::jsonb,
+  visit_count    INTEGER     DEFAULT 0,
   updated_at     TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -71,6 +72,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'en';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS watch_history JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS watch_progress JSONB DEFAULT '{}'::jsonb;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS watchlist JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS visit_count INTEGER DEFAULT 0;
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
@@ -113,7 +115,22 @@ CREATE POLICY "profiles: delete own row"
   USING (id = auth.uid() AND public.is_allowed_email());
 
 -- ─────────────────────────────────────────────────────────────
--- 3.  TABLE: comments
+-- 3.  FUNCTION: increment_visit_count
+--     Atomically increments visit_count for a given user profile.
+--     Called via supabase.rpc() on each page load.
+-- ─────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.increment_visit_count(uid UUID)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  UPDATE public.profiles
+  SET visit_count = COALESCE(visit_count, 0) + 1
+  WHERE id = uid;
+$$;
+
+-- ─────────────────────────────────────────────────────────────
+-- 4.  TABLE: comments
 --     Stores user comments keyed by movie/show id (string).
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.comments (
@@ -167,7 +184,7 @@ CREATE POLICY "comments: delete own"
   USING (user_id = auth.uid() AND public.is_allowed_email());
 
 -- ─────────────────────────────────────────────────────────────
--- 4.  TRIGGER: auto-create profile on sign-up
+-- 5.  TRIGGER: auto-create profile on sign-up
 -- ─────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
@@ -196,7 +213,7 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION public.handle_new_user();
 
 -- ─────────────────────────────────────────────────────────────
--- 5.  TABLE: sports_chat_messages
+-- 6.  TABLE: sports_chat_messages
 --     Stores real-time chat messages for live sports events.
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.sports_chat_messages (

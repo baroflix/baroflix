@@ -7,6 +7,7 @@ export const locales = {
       comingSoon: 'Releases',
       stats: 'Stats',
       collections: 'Collections',
+      downloadApp: 'Download app!',
     },
     home: {
       continueWatching: 'Continue Watching',
@@ -38,6 +39,7 @@ export const locales = {
       comingSoon: 'Premiery',
       stats: 'Statystyki',
       collections: 'Kolekcje',
+      downloadApp: 'Pobierz Klienta',
     },
     home: {
       continueWatching: 'Oglądaj Dalej',

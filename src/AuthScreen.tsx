@@ -94,17 +94,15 @@ export function AuthScreen() {
       <div style={{ width: '100%', maxWidth: 420 }}>
         {/* Logo / Title */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1
+          <img
+            src="/baroflix_oneline.png"
+            alt="Baroflix"
             style={{
-              fontSize: '2rem',
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
-              color: 'white',
-              marginBottom: '0.5rem',
+              height: '2.5rem',
+              width: 'auto',
+              marginBottom: '0.75rem',
             }}
-          >
-            Baroflix
-          </h1>
+          />
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem' }}>
             Sign in to access {phrase}
           </p>

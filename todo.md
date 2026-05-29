@@ -1,0 +1,3 @@
+- the continue watching scrolling bar does not have the arrows to scroll
+- remove the MY LIST implementation, since we have collections now.
+- make sure that watched and rated is always visible, even with no items, because im not sure if you fixed this but it would happen that if you deleted your custom colelction then the watched collection would also disappear

@@ -68,7 +68,7 @@ async function assertEmailAllowed(email: string): Promise<void> {
 async function fetchProfile(userId: string): Promise<Profile | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('id, username, avatar_url, theme, language, watch_history, watch_progress, watchlist, ratings, custom_lists, updated_at')
+    .select('id, username, avatar_url, theme, language, watch_history, watch_progress, watchlist, ratings, custom_lists, visit_count, updated_at')
     .eq('id', userId)
     .maybeSingle()
 
@@ -121,8 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [session]
   )
 
-  // Called every time auth state changes (sign-in, sign-out, token refresh)
-  const handleSession = useCallback(async (newSession: Session | null) => {
+  // Called every time auth state changes (sign-in, sign-out, token refresh).
+  // Pass incrementVisit=true only on initial page load to avoid counting token refreshes.
+  const handleSession = useCallback(async (newSession: Session | null, incrementVisit = false) => {
     setAuthError(null)
 
     if (!newSession) {
@@ -136,6 +137,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const prof = await fetchProfile(newSession.user.id)
       setSession(newSession)
       setProfile(prof)
+
+      if (incrementVisit) {
+        supabase.rpc('increment_visit_count', { uid: newSession.user.id }).then()
+      }
 
       if (prof) {
         const dbTheme = prof.theme as ThemeId | null
@@ -249,9 +254,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    // Restore existing session on mount
+    // Restore existing session on mount — increment visit counter on page load
     supabase.auth.getSession().then(({ data }) => {
-      handleSession(data.session).finally(() => setLoading(false))
+      handleSession(data.session, /* incrementVisit */ true).finally(() => setLoading(false))
     })
 
     // Subscribe to future changes

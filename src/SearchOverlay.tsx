@@ -85,7 +85,7 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
               justifyContent: 'center',
               gap: 16,
               padding: '24px 28px',
-              maxWidth: '800px',
+              maxWidth: '1200px',
               margin: '0 auto',
               width: '100%',
             }}
@@ -191,7 +191,7 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="flex gap-2 px-7 pb-4 max-w-[800px] mx-auto w-full justify-center"
+            className="flex gap-2 px-7 pb-4 max-w-[1200px] mx-auto w-full justify-center"
           >
             {(['all', 'movie', 'tv'] as const).map(f => (
               <button

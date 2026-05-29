@@ -33,6 +33,7 @@ export interface Profile {
   watchlist: any[] | null
   ratings: Record<string, number> | null
   custom_lists: any[] | null
+  visit_count: number | null
   updated_at: string | null
 }
 
