@@ -90,7 +90,7 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
             </Link>
 
             {/* Left nav — desktop */}
-            <nav className="hidden sm:flex items-center gap-6">
+            <nav className="hidden lg:flex items-center gap-6">
               {navLinks.map(({ to, label }) => (
                 <Link key={to} to={to} className="text-sm font-semibold text-white/70 hover:text-white transition-colors">
                   {label}
@@ -104,7 +104,7 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
             {!isElectron && (
               <Link
                 to="/download"
-                className="hidden sm:flex items-center justify-center px-4 h-10 rounded-full text-sm font-bold text-white transition-all hover:brightness-110 mr-2"
+                className="hidden lg:flex items-center justify-center px-4 h-10 rounded-full text-sm font-bold text-white transition-all hover:brightness-110 mr-2"
                 style={{
                   background: 'var(--accent)',
                   boxShadow: '0 0 20px var(--accent-dim)',
@@ -133,7 +133,7 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
 
             {/* Hamburger — mobile only */}
             <button
-              className="sm:hidden flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-colors"
+              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-colors"
               style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
               onClick={() => setMobileOpen(o => !o)}
               aria-label="Menu"
@@ -146,7 +146,7 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
 
       {/* Mobile drawer */}
       <div
-        className="fixed inset-0 z-40 sm:hidden pointer-events-none"
+        className="fixed inset-0 z-40 lg:hidden pointer-events-none"
         aria-hidden={!mobileOpen}
       >
         {/* Backdrop */}
