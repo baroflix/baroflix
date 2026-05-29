@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import { THEME_PRESETS, useScrollDirection } from './hooks'
 import type { ThemeSettings } from './hooks'
-import { SearchOverlay, HomeSearchToggle } from './SearchOverlay'
+import { HomeSearchToggle } from './SearchOverlay'
 import { locales } from './locales'
 
 // ─── Shell ───────────────────────────────────────────────────────────────────
@@ -49,7 +49,6 @@ export function Shell({ settings }: { settings: ThemeSettings }) {
 
 function NavBar({ language }: { language?: 'en' | 'pl' }) {
   const hidden = useScrollDirection()
-  const [searchOpen, setSearchOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
   const lang = language || 'en'
@@ -113,23 +112,27 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
                 {t.downloadApp}
               </Link>
             )}
+            {/* Search — always visible */}
             <HomeSearchToggle />
-            <Link
-              to="/settings"
-              className="flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-colors"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
-              aria-label="Settings"
-            >
-              <SettingsIcon className="w-4 h-4" />
-            </Link>
-            <Link
-              to="/profile"
-              className="flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-colors"
-              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
-              aria-label="Profile"
-            >
-              <User className="w-4 h-4" />
-            </Link>
+            {/* Settings + Profile — desktop only */}
+            <div className="hidden lg:flex items-center gap-2">
+              <Link
+                to="/settings"
+                className="flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-colors"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+                aria-label="Settings"
+              >
+                <SettingsIcon className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/profile"
+                className="flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-colors"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+                aria-label="Profile"
+              >
+                <User className="w-4 h-4" />
+              </Link>
+            </div>
 
             {/* Hamburger — mobile only */}
             <button
@@ -177,6 +180,27 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
             </Link>
           ))}
 
+          {/* Divider */}
+          <div className="my-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }} />
+
+          {/* Settings */}
+          <Link
+            to="/settings"
+            className="flex items-center gap-3 text-base font-semibold text-white/70 hover:text-white transition-colors px-3 py-3 rounded-xl hover:bg-white/5"
+          >
+            <SettingsIcon className="w-4 h-4 shrink-0" />
+            Settings
+          </Link>
+
+          {/* Profile */}
+          <Link
+            to="/profile"
+            className="flex items-center gap-3 text-base font-semibold text-white/70 hover:text-white transition-colors px-3 py-3 rounded-xl hover:bg-white/5"
+          >
+            <User className="w-4 h-4 shrink-0" />
+            Profile
+          </Link>
+
           {!isElectron && (
             <Link
               to="/download"
@@ -192,7 +216,6 @@ function NavBar({ language }: { language?: 'en' | 'pl' }) {
         </nav>
       </div>
 
-      {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
     </>
   )
 }

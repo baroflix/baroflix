@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Play, ArrowRight, Settings as SettingsIcon, Star, ChevronLeft, ChevronRight, User } from 'lucide-react'
+import { Play, ArrowRight, Settings as SettingsIcon, Star, ChevronLeft, ChevronRight, User, Menu, X } from 'lucide-react'
 import heroFallback from './assets/hero.png'
 import { imageUrl, mediaTypeFromItem, titleFromItem, yearFromItem, hasTmdbCredentials, pickTrailer, buildVideasyUrl } from './lib/tmdb'
 import { useHomeCatalog, useFeaturedDetails, useLocalStorageState, STORAGE_KEYS, THEME_PRESETS, upsertHistory, useCustomLists, useRatings } from './hooks'
@@ -33,6 +33,7 @@ export function HomePage() {
   const [ratingsRaw] = useRatings()
   const [playback, setPlayback] = useState<{ mediaType: MediaKind; id: number; season?: number; episode?: number } | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const dragState = useRef<{ x: number } | null>(null)
   
   const collectionsRailRef = useRef<HTMLDivElement>(null)
@@ -230,7 +231,7 @@ export function HomePage() {
                 alt="Baroflix"
                 className="block h-10 w-auto"
             />
-            <nav className="hidden sm:flex items-center gap-6">
+            <nav className="hidden lg:flex items-center gap-6">
               <Link to="/" className="text-sm font-semibold text-white hover:text-white transition-colors">
                 {navT.home}
               </Link>
@@ -255,7 +256,7 @@ export function HomePage() {
             {!(/electron/i.test(navigator.userAgent)) && (
               <Link
                 to="/download"
-                className="hidden sm:flex items-center justify-center px-4 h-10 rounded-full text-sm font-bold text-white transition-all hover:brightness-110 mr-2"
+                className="hidden lg:flex items-center justify-center px-4 h-10 rounded-full text-sm font-bold text-white transition-all hover:brightness-110 mr-2"
                 style={{
                   background: 'var(--accent)',
                   boxShadow: '0 0 20px var(--accent-dim)',
@@ -264,32 +265,118 @@ export function HomePage() {
                 {navT.downloadApp}
               </Link>
             )}
+            {/* Search — always visible */}
             <HomeSearchToggle />
+            {/* Settings + Profile — desktop only */}
+            <div className="hidden lg:flex items-center gap-2">
+              <Link
+                to="/settings"
+                className="flex items-center justify-center w-10 h-10 rounded-full transition-colors"
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: 'rgba(255,255,255,0.7)',
+                }}
+                aria-label="Settings"
+              >
+                <SettingsIcon className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/profile"
+                className="flex items-center justify-center w-10 h-10 rounded-full transition-colors"
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: 'rgba(255,255,255,0.7)',
+                }}
+                aria-label="Profile"
+              >
+                <User className="w-4 h-4" />
+              </Link>
+            </div>
+            {/* Hamburger — mobile only */}
+            <button
+              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full text-white/70 hover:text-white transition-colors"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+              onClick={() => setMobileMenuOpen(o => !o)}
+              aria-label="Menu"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile drawer */}
+        <div className="fixed inset-0 z-40 lg:hidden pointer-events-none" aria-hidden={!mobileMenuOpen}>
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 transition-opacity duration-300"
+            style={{ opacity: mobileMenuOpen ? 1 : 0, pointerEvents: mobileMenuOpen ? 'auto' : 'none' }}
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Panel */}
+          <nav
+            className="absolute top-0 right-0 h-full w-72 flex flex-col pt-24 pb-8 px-6 gap-1 transition-transform duration-300"
+            style={{
+              transform: mobileMenuOpen ? 'translateX(0)' : 'translateX(100%)',
+              pointerEvents: mobileMenuOpen ? 'auto' : 'none',
+              background: 'rgba(10,10,10,0.97)',
+              backdropFilter: 'blur(20px)',
+              borderLeft: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            {[
+              { to: '/', label: navT.home },
+              { to: '/browse', label: navT.browse },
+              { to: '/sports', label: navT.sports },
+              { to: '/collections', label: navT.collections },
+              { to: '/coming-soon', label: navT.comingSoon },
+              { to: '/stats', label: navT.stats },
+            ].map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-base font-semibold text-white/70 hover:text-white transition-colors px-3 py-3 rounded-xl hover:bg-white/5"
+              >
+                {label}
+              </Link>
+            ))}
+
+            {/* Divider */}
+            <div className="my-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }} />
+
+            {/* Settings */}
             <Link
               to="/settings"
-              className="flex items-center justify-center w-10 h-10 rounded-full transition-colors"
-              style={{
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                color: 'rgba(255,255,255,0.7)',
-              }}
-              aria-label="Settings"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 text-base font-semibold text-white/70 hover:text-white transition-colors px-3 py-3 rounded-xl hover:bg-white/5"
             >
-              <SettingsIcon className="w-4 h-4" />
+              <SettingsIcon className="w-4 h-4 shrink-0" />
+              Settings
             </Link>
+
+            {/* Profile */}
             <Link
               to="/profile"
-              className="flex items-center justify-center w-10 h-10 rounded-full transition-colors"
-              style={{
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                color: 'rgba(255,255,255,0.7)',
-              }}
-              aria-label="Profile"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 text-base font-semibold text-white/70 hover:text-white transition-colors px-3 py-3 rounded-xl hover:bg-white/5"
             >
-              <User className="w-4 h-4" />
+              <User className="w-4 h-4 shrink-0" />
+              Profile
             </Link>
-          </div>
+
+            {!(/electron/i.test(navigator.userAgent)) && (
+              <Link
+                to="/download"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mt-4 flex items-center justify-center px-4 h-11 rounded-full text-sm font-bold text-white transition-all hover:brightness-110"
+                style={{ background: 'var(--accent)', boxShadow: '0 0 20px var(--accent-dim)' }}
+              >
+                {navT.downloadApp}
+              </Link>
+            )}
+          </nav>
         </div>
 
         {/* Hero content */}
