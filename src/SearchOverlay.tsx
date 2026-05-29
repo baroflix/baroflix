@@ -255,15 +255,15 @@ export function HomeSearchToggle() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm transition-all sm:w-64 sm:justify-start"
+        className="flex items-center justify-center w-10 h-10 rounded-full text-sm transition-all lg:w-64 lg:justify-start lg:gap-2 lg:px-4 lg:h-10"
         style={{
           background: 'rgba(255,255,255,0.08)',
           border: '1px solid rgba(255,255,255,0.12)',
           color: 'rgba(255,255,255,0.7)',
         }}
       >
-        <Search className="w-4 h-4" />
-        <span className="hidden sm:inline">Search…</span>
+        <Search className="w-4 h-4 shrink-0" />
+        <span className="hidden lg:inline">Search…</span>
       </button>
       {open && <SearchOverlay onClose={() => setOpen(false)} />}
     </>
