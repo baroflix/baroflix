@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Download, Monitor, Apple } from 'lucide-react'
+import { Monitor, Apple } from 'lucide-react'
 
 // Simple Linux icon since lucide-react might not have a dedicated one easily discoverable by name 'Linux' or 'Tux'
 function LinuxIcon(props: any) {
